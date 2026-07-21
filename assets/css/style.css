@@ -1,0 +1,198 @@
+/* ===========================================================
+   Online Focus Group — Shared Design System
+   Used by every page (entry, NDA, reader, feedback).
+   =========================================================== */
+
+:root {
+  /* Colors */
+  --color-bg-start: #0b0d12;
+  --color-bg-end: #14171f;
+  --color-surface: rgba(255, 255, 255, 0.045);
+  --color-surface-border: rgba(255, 255, 255, 0.09);
+  --color-accent: #d4af6a;      /* muted gold — premium accent */
+  --color-accent-hover: #e3c17f;
+  --color-text: #f5f3ee;
+  --color-text-muted: #9aa0ab;
+  --color-error: #e2685f;
+
+  /* Fonts — Arabic and Latin use different families for best legibility */
+  --font-ar: 'Tajawal', sans-serif;
+  --font-en: 'Poppins', sans-serif;
+
+  /* Shape */
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --shadow-soft: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background: linear-gradient(160deg, var(--color-bg-start) 0%, var(--color-bg-end) 100%);
+  color: var(--color-text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  line-height: 1.7;
+}
+
+/* Font switches automatically based on the page's language */
+html[lang="ar"] body { font-family: var(--font-ar); }
+html[lang="en"] body { font-family: var(--font-en); }
+
+/* ===== Language toggle button (top corner) ===== */
+.lang-toggle {
+  position: fixed;
+  top: 20px;
+  inset-inline-end: 20px; /* respects RTL/LTR automatically */
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
+  color: var(--color-text-muted);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.lang-toggle:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* ===== Card ===== */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: 56px 48px; /* Increased padding for a better desktop look */
+  width: 100%;
+  max-width: 580px; /* Increased from 420px to 580px for laptops */
+  text-align: center;
+}
+
+.card__eyebrow {
+  color: var(--color-accent);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.card__title {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.card__subtitle {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin-bottom: 32px;
+}
+
+/* ===== Form ===== */
+.field {
+  text-align: start; /* respects RTL/LTR */
+  margin-bottom: 20px;
+}
+
+.field label {
+  display: block;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.field input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  color: var(--color-text);
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.field input:focus {
+  border-color: var(--color-accent);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.field input::placeholder {
+  color: rgba(245, 243, 238, 0.3);
+}
+
+.field-error {
+  display: none;
+  color: var(--color-error);
+  font-size: 12.5px;
+  margin-top: 6px;
+  text-align: start;
+}
+
+.field.has-error input {
+  border-color: var(--color-error);
+}
+
+.field.has-error .field-error {
+  display: block;
+}
+
+/* ===== Button ===== */
+.btn-primary {
+  width: 100%;
+  background: var(--color-accent);
+  color: #14171f;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 15px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.btn-primary:hover {
+  background: var(--color-accent-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* ===== Footer note ===== */
+.card__footnote {
+  margin-top: 24px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 480px) {
+  .card {
+    padding: 34px 24px;
+  }
+  .card__title {
+    font-size: 22px;
+  }
+}
