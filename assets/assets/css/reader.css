@@ -1,0 +1,244 @@
+/* ===========================================================
+   Online Focus Group — Flipbook Reader styling
+   =========================================================== */
+
+.reader-body {
+  display: block;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ===== Top bar ===== */
+.reader-topbar {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--color-surface-border);
+  background: rgba(11, 13, 18, 0.85);
+  backdrop-filter: blur(10px);
+}
+
+.reader-topbar__title {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.03em;
+}
+
+.reader-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--color-surface-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.icon-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.lang-toggle--inline {
+  position: static;
+  padding: 8px 14px;
+  font-size: 12px;
+}
+
+/* ===== Book viewport ===== */
+.book-viewport {
+  height: calc(100vh - 60px - 56px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 20px;
+  perspective: 1800px;
+}
+
+.book {
+  position: relative;
+  width: min(1000px, 92vw); /* Massively increased width for laptops */
+  height: 100%;
+  max-height: 88vh; /* Stretches height to fill the screen vertically */
+}
+
+.page {
+  position: absolute;
+  inset: 0;
+  background: #f6f1e7; /* warm paper tone, deliberately light against the dark UI */
+  border-radius: 6px;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transform-origin: center;
+}
+
+.page-inner {
+  height: 100%;
+  overflow-y: auto;
+  padding: 48px 40px;
+  color: #201c14;
+  font-family: 'Noto Naskh Arabic', var(--font-ar);
+  font-size: 17px;
+  line-height: 2;
+  transform-origin: top center;
+  transition: transform 0.15s ease;
+}
+
+html[lang="en"] .page-inner {
+  font-family: var(--font-en);
+}
+
+.page-inner .scene-heading {
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin-bottom: 14px;
+  color: #4a3f2a;
+}
+
+.page-inner .character {
+  font-weight: 600;
+  margin-top: 22px;
+  text-align: center;
+}
+
+.page-inner .dialogue {
+  max-width: 70%;
+  margin: 4px auto 0;
+  text-align: center;
+}
+
+.page-inner .action {
+  margin-top: 16px;
+}
+
+/* ===== Watermark ===== */
+.watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: space-evenly;
+  justify-content: space-evenly;
+  transform: rotate(-32deg) scale(1.3);
+  pointer-events: none;
+  opacity: 0.09;
+}
+
+.watermark span {
+  font-size: 15px;
+  font-weight: 700;
+  color: #000;
+  white-space: nowrap;
+  margin: 18px 26px;
+}
+
+/* ===== Flip animation ===== */
+@keyframes flipOutForward {
+  from { transform: rotateY(0deg); opacity: 1; }
+  to   { transform: rotateY(-95deg); opacity: 0.2; }
+}
+@keyframes flipInForward {
+  from { transform: rotateY(95deg); opacity: 0.2; }
+  to   { transform: rotateY(0deg); opacity: 1; }
+}
+@keyframes flipOutBack {
+  from { transform: rotateY(0deg); opacity: 1; }
+  to   { transform: rotateY(95deg); opacity: 0.2; }
+}
+@keyframes flipInBack {
+  from { transform: rotateY(-95deg); opacity: 0.2; }
+  to   { transform: rotateY(0deg); opacity: 1; }
+}
+
+.page.flip-out-forward { animation: flipOutForward 0.32s ease forwards; }
+.page.flip-in-forward  { animation: flipInForward 0.32s ease forwards; }
+.page.flip-out-back    { animation: flipOutBack 0.32s ease forwards; }
+.page.flip-in-back     { animation: flipInBack 0.32s ease forwards; }
+
+.page-notes { width: min(1000px, 92vw); margin: 0 auto 10px; padding: 0 20px; }
+.page-notes label { display: block; font-size: 12px; color: var(--color-text-muted); margin-bottom: 6px; }
+.page-notes textarea { width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--color-surface-border); border-radius: var(--radius-md); padding: 10px 14px; color: var(--color-text); font-size: 13.5px; font-family: inherit; outline: none; resize: vertical; transition: border-color 0.2s ease; }
+.page-notes textarea:focus { border-color: var(--color-accent); background: rgba(255, 255, 255, 0.06); }
+/* ===== Nav buttons ===== */
+.nav-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid var(--color-surface-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+.nav-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+/* ===== Footer / progress ===== */
+.reader-footer {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+  border-top: 1px solid var(--color-surface-border);
+  background: rgba(11, 13, 18, 0.85);
+}
+
+.progress-track {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--color-accent);
+  width: 0%;
+  transition: width 0.25s ease;
+}
+
+.page-indicator {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  min-width: 60px;
+  text-align: center;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+  .book-viewport { gap: 4px; padding: 4px; }
+  .book { width: 98vw; } /* Forces the book to fill the whole phone screen */
+  .nav-btn { width: 32px; height: 32px; font-size: 16px; }
+  .page-inner { padding: 12px 10px; font-size: 15px; } /* Shrinks the empty margins */
+  .reader-topbar { padding: 0 12px; }
+}
+
+/* ===== Finish state (last page) ===== */
+.nav-btn--finish {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #14171f;
+}
+.nav-btn--finish:hover {
+  background: var(--color-accent-hover);
+  color: #14171f;
+}

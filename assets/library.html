@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Online Focus Group — Library</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/library.css">
+</head>
+<body class="library-body">
+
+  <button class="lang-toggle" id="langToggle" type="button">English</button>
+
+  <div class="library-wrap">
+    <div class="library-header">
+      <div class="card__eyebrow" data-i18n="eyebrow">مجموعة تركيز خاصة</div>
+      <h1 class="card__title" data-i18n="title">النصوص المتاحة</h1>
+      <p class="card__subtitle" data-i18n="subtitle">اختر نصاً لقراءته</p>
+    </div>
+
+    <div class="script-grid" id="scriptGrid"></div>
+
+    <p class="library-empty" id="emptyState" data-i18n="emptyState" hidden>
+      لا توجد نصوص متاحة حالياً
+    </p>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/library.js"></script>
+</body>
+</html>

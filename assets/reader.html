@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Online Focus Group — Reader</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Poppins:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/reader.css">
+</head>
+<body class="reader-body">
+
+  <header class="reader-topbar">
+    <span class="reader-topbar__title" id="scriptTitle">—</span>
+    <div class="reader-topbar__actions">
+      <button class="icon-btn" id="zoomOutBtn" type="button" aria-label="Zoom out">−</button>
+      <button class="icon-btn" id="zoomInBtn" type="button" aria-label="Zoom in">+</button>
+      <button class="lang-toggle lang-toggle--inline" id="langToggle" type="button">English</button>
+    </div>
+  </header>
+
+  <main class="book-viewport">
+    <button class="nav-btn nav-prev" id="prevBtn" type="button" aria-label="Previous page">
+      <span class="nav-btn__arrow">‹</span>
+    </button>
+
+    <div class="book" id="book">
+      <div class="loading-indicator" id="loadingIndicator">جاري تحميل النص...</div>
+      <div class="page" id="pageCurrent" hidden>
+        <div class="page-inner" id="pageContent"></div>
+        <div class="watermark" id="watermark"></div>
+      </div>
+    </div>
+
+    <button class="nav-btn nav-next" id="nextBtn" type="button" aria-label="Next page">
+      <span class="nav-btn__arrow">›</span>
+    </button>
+  <div class="page-notes">
+      <label id="notesLabel" for="pageNote">ملاحظات هذه الصفحة (اختياري) / Page Notes (Optional)</label>
+      <textarea id="pageNote" rows="2" placeholder="اكتب أفكارك هنا لكي لا تنساها... / Jot down thoughts here so you don't forget..."></textarea>
+    </div>
+  </main>
+
+  <footer class="reader-footer">
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="page-indicator" id="pageIndicator">— / —</div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/reader.js"></script>
+</body>
+</html>
