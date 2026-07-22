@@ -108,7 +108,10 @@
         <textarea id="additionalComments" name="additionalComments" rows="2"></textarea>
       </div>
 
-      <button type="submit" class="btn-primary" data-i18n="submitBtn">إرسال التقييم</button>
+      <div style="display: flex; gap: 12px; margin-top: 8px;">
+  <button type="button" id="backToScriptBtn" data-i18n="backToScriptBtn" style="flex: 1; background: transparent; border: 1px solid var(--color-surface-border); color: var(--color-text); border-radius: var(--radius-md); font-family: inherit; font-size: 15px; cursor: pointer; transition: all 0.2s;">العودة للنص</button>
+  <button type="submit" class="btn-primary" data-i18n="submitBtn" style="flex: 2; margin-top: 0;">إرسال التقييم</button>
+</div>
     </form>
 
     <div class="thank-you" id="thankYou" hidden>
