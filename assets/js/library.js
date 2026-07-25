@@ -55,9 +55,25 @@ document.getElementById("langToggle").addEventListener("click", () => {
 let scriptsCache = [];
 
 async function loadLibrary() {
-  const result = await listScripts(sessionToken);
+  let result;
+  try {
+    result = await listScripts(sessionToken);
+  } catch (err) {
+    document.getElementById("emptyState").textContent =
+      "تعذر الاتصال بالخادم. / Could not connect to the server.";
+    document.getElementById("emptyState").hidden = false;
+    return;
+  }
 
-  if (!result.success || !result.scripts.length) {
+  if (!result.success) {
+    // Show the real backend error instead of a generic "no scripts" message
+    document.getElementById("emptyState").textContent =
+      "خطأ: " + result.error;
+    document.getElementById("emptyState").hidden = false;
+    return;
+  }
+
+  if (!result.scripts.length) {
     document.getElementById("emptyState").hidden = false;
     return;
   }
@@ -81,13 +97,13 @@ function renderScripts() {
 
     card.innerHTML = `
       ${isDone ? `<span class="script-card__badge">${dict.reviewed}</span>` : ""}
-      <div class="script-card__icon">📖</div>
-      <div class="script-card__title">${script.title}</div>
-      <div class="script-card__cta">${dict.cta}</div>
+      <div class="script-card__title" style="color: var(--color-accent); font-weight: 700; font-size: 16px;">${script.title}</div>
     `;
 
     card.addEventListener("click", () => {
-      sessionStorage.setItem("ofg_scriptId", script.scriptId); sessionStorage.setItem("ofg_scriptTitle", script.title);
+      sessionStorage.setItem("ofg_scriptId", script.scriptId); 
+      sessionStorage.setItem("ofg_scriptTitle", script.title);
+      sessionStorage.removeItem("ofg_currentPage"); // Resets reading progress for new scripts
       window.location.href = "reader.html";
     });
 

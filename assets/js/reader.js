@@ -5,11 +5,14 @@
    =========================================================== */
 
 if (typeof pdfjsLib === "undefined") {
-  document.addEventListener("DOMContentLoaded", () => {
-    const el = document.getElementById("loadingIndicator");
-    if (el) el.textContent = "تعذر تحميل مكتبة عرض الملفات (PDF.js). جرّب تعطيل أي مانع إعلانات ثم أعد تحميل الصفحة. / Failed to load the PDF viewer library — try disabling any ad blocker, then reload.";
-  });
-  throw new Error("pdfjsLib failed to load — check the Network tab for a blocked or failed request to jsdelivr.net");
+  // The script tags load at the bottom of <body>, so the DOM is already
+  // ready by this point — DOMContentLoaded has already fired and would
+  // never call this again. Update the element directly instead.
+  const el = document.getElementById("loadingIndicator");
+  if (el) {
+    el.textContent = "تعذر تحميل مكتبة عرض الملفات (PDF.js). جرّب تعطيل أي مانع إعلانات ثم أعد تحميل الصفحة. / Failed to load the PDF viewer library — try disabling any ad blocker, then reload.";
+  }
+  throw new Error("pdfjsLib failed to load — check the Network tab for a blocked or failed request to the PDF.js CDN");
 }
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -24,10 +27,13 @@ const scriptId = sessionStorage.getItem("ofg_scriptId");
 
 if (!fullName || !phone) {
   window.location.href = "index.html";
+  throw new Error("Redirecting to index.html — missing session data");
 } else if (ndaAccepted !== "Yes") {
   window.location.href = "nda.html";
+  throw new Error("Redirecting to nda.html — NDA not accepted");
 } else if (!scriptId) {
   window.location.href = "library.html";
+  throw new Error("Redirecting to library.html — no script selected");
 }
 
 // ---------- 2. Elements ----------
@@ -42,13 +48,27 @@ const pageIndicator = document.getElementById("pageIndicator");
 
 let pageImages = [];
 let pageNotes = JSON.parse(sessionStorage.getItem("ofg_pageNotes") || "{}");
-let currentIndex = 0;
+// Remembers the last page they were on, or starts at 0
+let currentIndex = parseInt(sessionStorage.getItem("ofg_currentPage") || "0");
 const noteInput = document.getElementById("pageNote");
 
 noteInput.addEventListener("input", () => {
   pageNotes[currentIndex] = noteInput.value;
   sessionStorage.setItem("ofg_pageNotes", JSON.stringify(pageNotes));
 });
+
+const notesToggleBtn = document.getElementById("notesToggleBtn");
+const pageNotesContent = document.getElementById("pageNotesContent");
+if (notesToggleBtn && pageNotesContent) {
+  notesToggleBtn.addEventListener("click", () => {
+    pageNotesContent.classList.toggle("show");
+    if (pageNotesContent.classList.contains("show")) {
+      pageNotesContent.scrollIntoView({ behavior: "smooth", block: "center" });
+      noteInput.focus();
+    }
+  });
+}
+
 let zoomLevel = 1;
 const ZOOM_MIN = 0.8;
 const ZOOM_MAX = 1.6;
@@ -120,7 +140,6 @@ function render() {
   }
 
   noteInput.value = pageNotes[currentIndex] || "";
-  noteInput.value = pageNotes[currentIndex] || "";
   progressFill.style.width = `${((currentIndex + 1) / pageImages.length) * 100}%`;
   pageIndicator.textContent = `${currentIndex + 1} / ${pageImages.length}`;
 
@@ -151,6 +170,7 @@ function goTo(newIndex, direction) {
 
   setTimeout(() => {
     currentIndex = newIndex;
+    sessionStorage.setItem("ofg_currentPage", currentIndex); // Auto-saves progress
     render();
     pageEl.classList.remove(outClass);
     pageEl.classList.add(inClass);
@@ -171,8 +191,21 @@ function prevPage() {
   goTo(currentIndex - 1, "back");
 }
 
+const exitModal = document.getElementById("exitModal");
+const cancelExitBtn = document.getElementById("cancelExitBtn");
+const confirmExitBtn = document.getElementById("confirmExitBtn");
+
 function finishReading() {
-  window.location.href = "feedback.html";
+  if (exitModal) exitModal.classList.add("show");
+}
+
+if (cancelExitBtn && confirmExitBtn && exitModal) {
+  cancelExitBtn.addEventListener("click", () => {
+    exitModal.classList.remove("show");
+  });
+  confirmExitBtn.addEventListener("click", () => {
+    window.location.href = "feedback.html";
+  });
 }
 
 nextBtn.addEventListener("click", nextPage);
@@ -192,6 +225,9 @@ document.querySelector(".book").addEventListener("touchstart", (e) => {
 }, { passive: true });
 
 document.querySelector(".book").addEventListener("touchend", (e) => {
+  // Ignore swipe navigation if the user is zoomed in
+  if (zoomLevel > 1) return;
+  
   const deltaX = e.changedTouches[0].clientX - touchStartX;
   const isRTL = document.documentElement.getAttribute("dir") === "rtl";
   if (Math.abs(deltaX) < 50) return;
@@ -221,22 +257,79 @@ document.getElementById("zoomOutBtn").addEventListener("click", () => {
   }
 });
 
+// Mobile Pinch-to-Zoom
+let initDist = null, initZ = 1;
+const viewport = document.querySelector(".book-viewport");
+viewport.addEventListener("touchstart", (e) => {
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    initDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    initZ = zoomLevel;
+  }
+}, { passive: false });
+viewport.addEventListener("touchmove", (e) => {
+  if (e.touches.length === 2 && initDist) {
+    e.preventDefault();
+    const curDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    zoomLevel = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, +(initZ * (curDist / initDist)).toFixed(2)));
+    pageContent.style.transform = "none";
+    const img = pageContent.querySelector("img");
+    if (img) { img.style.width = `${zoomLevel * 100}%`; img.style.maxWidth = "none"; img.style.margin = "0 auto"; }
+  }
+}, { passive: false });
+
 // ---------- 10. Language toggle ----------
-document.getElementById("langToggle").addEventListener("click", () => {
+const translations = {
+  ar: {
+    addNoteBtn: "أضف ملاحظة",
+    notesLabel: "ملاحظات هذه الصفحة (اختياري)",
+    notesPlaceholder: "اكتب أفكارك هنا لكي لا تنساها...",
+    toggleLabel: "English",
+    modalTitle: "تأكيد الإنهاء",
+    modalText: "هل أنت متأكد أنك انتهيت من القراءة؟ لا يمكنك العودة إلى النص بمجرد الانتقال إلى صفحة التقييم.",
+    modalCancel: "إلغاء",
+    modalConfirm: "نعم، انتهيت"
+  },
+  en: {
+    addNoteBtn: "Add Note",
+    notesLabel: "Page Notes (Optional)",
+    notesPlaceholder: "Jot down thoughts here so you don't forget...",
+    toggleLabel: "العربية",
+    modalTitle: "Confirm Finish",
+    modalText: "Are you sure you are done reading? You cannot return to the script once you proceed to the feedback.",
+    modalCancel: "Cancel",
+    modalConfirm: "Yes, I'm done"
+  }
+};
+
+function applyLanguage(lang) {
   const html = document.documentElement;
-  const isAr = html.getAttribute("lang") === "ar";
-  html.setAttribute("lang", isAr ? "en" : "ar");
-  html.setAttribute("dir", isAr ? "ltr" : "rtl");
-  document.getElementById("langToggle").textContent = isAr ? "العربية" : "English";
-  sessionStorage.setItem("ofg_lang", isAr ? "en" : "ar");
+  html.setAttribute("lang", lang);
+  html.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
+  const dict = translations[lang];
+  
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const key = el.getAttribute("data-i18n");
+    if (dict[key]) el.textContent = dict[key];
+  });
+  
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-placeholder");
+    if (dict[key]) el.setAttribute("placeholder", dict[key]);
+  });
+  
+  document.getElementById("langToggle").textContent = dict.toggleLabel;
+  sessionStorage.setItem("ofg_lang", lang);
+  updateNextButtonState();
+}
+
+document.getElementById("langToggle").addEventListener("click", () => {
+  const current = document.documentElement.getAttribute("lang");
+  applyLanguage(current === "ar" ? "en" : "ar");
 });
 
-const savedLang = sessionStorage.getItem("ofg_lang");
-if (savedLang) {
-  document.documentElement.setAttribute("lang", savedLang);
-  document.documentElement.setAttribute("dir", savedLang === "ar" ? "rtl" : "ltr");
-  document.getElementById("langToggle").textContent = savedLang === "ar" ? "English" : "العربية";
-}
+const savedLang = sessionStorage.getItem("ofg_lang") || "ar";
+applyLanguage(savedLang);
 
 // ---------- 11. Kick off & Security ----------
 document.addEventListener("contextmenu", (e) => e.preventDefault());

@@ -36,7 +36,10 @@ html, body {
 }
 
 body {
-  background: linear-gradient(160deg, var(--color-bg-start) 0%, var(--color-bg-end) 100%);
+  background-color: #0b0d12;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   color: var(--color-text);
   min-height: 100vh;
   display: flex;
@@ -44,6 +47,22 @@ body {
   justify-content: center;
   padding: 24px;
   line-height: 1.7;
+}
+
+.bg-index {
+  background-image: linear-gradient(rgba(11, 13, 18, 0.75), rgba(11, 13, 18, 0.9)), url('../images/index-bg.png');
+}
+
+.bg-nda {
+  background-image: linear-gradient(rgba(11, 13, 18, 0.8), rgba(11, 13, 18, 0.95)), url('../images/nda-bg.png');
+}
+
+.bg-library {
+  background-image: linear-gradient(rgba(11, 13, 18, 0.7), rgba(11, 13, 18, 0.9)), url('../images/library-bg.png');
+}
+
+.bg-feedback {
+  background-image: linear-gradient(rgba(11, 13, 18, 0.8), rgba(11, 13, 18, 0.95)), url('../images/feedback-bg.png');
 }
 
 /* Font switches automatically based on the page's language */
@@ -72,15 +91,12 @@ html[lang="en"] body { font-family: var(--font-en); }
 
 /* ===== Card ===== */
 .card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-surface-border);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: transparent;
+  border: none;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
-  padding: 56px 48px; /* Increased padding for a better desktop look */
+  padding: 56px 48px;
   width: 100%;
-  max-width: 580px; /* Increased from 420px to 580px for laptops */
+  max-width: 580px;
   text-align: center;
 }
 
@@ -119,11 +135,11 @@ html[lang="en"] body { font-family: var(--font-en); }
 
 .field input {
   width: 100%;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-surface-border);
-  border-radius: var(--radius-md);
-  padding: 14px 16px;
-  color: var(--color-text);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(212, 175, 106, 0.2);
+  border-radius: 16px;
+  padding: 16px 18px;
+  color: var(--color-accent);
   font-size: 15px;
   font-family: inherit;
   outline: none;
@@ -158,17 +174,18 @@ html[lang="en"] body { font-family: var(--font-en); }
 /* ===== Button ===== */
 .btn-primary {
   width: 100%;
-  background: var(--color-accent);
-  color: #14171f;
+  background: linear-gradient(135deg, #e3c17f 0%, #d4af6a 100%);
+  color: #000000;
   border: none;
-  border-radius: var(--radius-md);
-  padding: 15px 20px;
-  font-size: 15px;
-  font-weight: 600;
+  border-radius: 16px;
+  padding: 16px 20px;
+  font-size: 16px;
+  font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  margin-top: 8px;
-  transition: background 0.2s ease, transform 0.1s ease;
+  margin-top: 16px;
+  box-shadow: 0 4px 15px rgba(212, 175, 106, 0.15);
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
 }
 
 .btn-primary:hover {
@@ -188,6 +205,9 @@ html[lang="en"] body { font-family: var(--font-en); }
 }
 
 /* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .card { padding: 40px 32px; max-width: 90%; }
+}
 @media (max-width: 480px) {
   body { padding: 12px; } /* Pushes the card closer to the phone edges */
   .card {

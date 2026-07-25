@@ -57,7 +57,8 @@ function isValidName(value) {
 
 function isValidPhone(value) {
   const cleaned = value.replace(/[\s-]/g, "");
-  return /^(07\d{8}|\+9627\d{8})$/.test(cleaned);
+  // Supports 07XXXXXXXX, +9627XXXXXXXX, and 009627XXXXXXXX
+  return /^(07\d{8}|(?:\+|00)9627\d{8})$/.test(cleaned);
 }
 
 form.addEventListener("submit", async (e) => {

@@ -7,7 +7,7 @@
    >>> PASTE YOUR WEB APP URL BELOW, replacing the placeholder <
    =========================================================== */
 
-const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxhCt7yQZQfUTj4JQjiQyJf8dGpxkwnxziD31iiESlFZDCbhQhGuOG9cyvcdqWP5wau/exec";
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzIejIakPvWYsA-ed2Varmc3fvj2EdB9qDIKkoFzl0KXxvD7kZAccFgz66mS1teQpGm/exec";
 
 async function callBackend(action, payload) {
   const response = await fetch(BACKEND_URL, {
