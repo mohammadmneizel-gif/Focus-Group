@@ -17,8 +17,6 @@
   <header class="reader-topbar">
     <span class="reader-topbar__title" id="scriptTitle">—</span>
     <div class="reader-topbar__actions">
-      <button class="icon-btn" id="zoomOutBtn" type="button" aria-label="Zoom out">−</button>
-      <button class="icon-btn" id="zoomInBtn" type="button" aria-label="Zoom in">+</button>
       <button class="lang-toggle lang-toggle--inline" id="langToggle" type="button">English</button>
     </div>
   </header>
@@ -29,6 +27,11 @@
     </button>
 
     <div class="book" id="book">
+      <!-- Floating zoom controls over the book -->
+      <div class="zoom-controls">
+        <button class="icon-btn cinematic-btn" id="zoomOutBtn" type="button">A-</button>
+        <button class="icon-btn cinematic-btn" id="zoomInBtn" type="button">A+</button>
+      </div>
       <div class="loading-indicator" id="loadingIndicator">جاري تحميل النص...</div>
       <div class="page" id="pageCurrent" hidden>
         <div class="page-inner" id="pageContent"></div>
@@ -40,8 +43,14 @@
       <span class="nav-btn__arrow">›</span>
     </button>
   <div class="page-notes">
-      <label id="notesLabel" for="pageNote">ملاحظات هذه الصفحة (اختياري) / Page Notes (Optional)</label>
-      <textarea id="pageNote" rows="2" placeholder="اكتب أفكارك هنا لكي لا تنساها... / Jot down thoughts here so you don't forget..."></textarea>
+      <button class="notes-toggle-btn" id="notesToggleBtn" type="button">
+        <span class="notes-icon">📝</span>
+        <span data-i18n="addNoteBtn">أضف ملاحظة</span>
+      </button>
+      <div class="page-notes-content" id="pageNotesContent">
+        <label id="notesLabel" for="pageNote" data-i18n="notesLabel">ملاحظات هذه الصفحة (اختياري)</label>
+        <textarea id="pageNote" rows="2" data-i18n-placeholder="notesPlaceholder" placeholder="اكتب أفكارك هنا لكي لا تنساها..."></textarea>
+      </div>
     </div>
   </main>
 
@@ -52,6 +61,17 @@
     <div class="page-indicator" id="pageIndicator">— / —</div>
   </footer>
 
+  <!-- Custom Exit Modal -->
+  <div class="exit-modal-overlay" id="exitModal">
+    <div class="exit-modal-box">
+      <h3 data-i18n="modalTitle">تأكيد الإنهاء</h3>
+      <p data-i18n="modalText">هل أنت متأكد أنك انتهيت من القراءة؟ لا يمكنك العودة إلى النص بمجرد الانتقال إلى صفحة التقييم.</p>
+      <div class="modal-actions">
+        <button class="modal-btn cancel-btn" id="cancelExitBtn" type="button" data-i18n="modalCancel">إلغاء</button>
+        <button class="modal-btn confirm-btn" id="confirmExitBtn" type="button" data-i18n="modalConfirm">نعم، انتهيت</button>
+      </div>
+    </div>
+  </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="assets/js/api.js"></script>
   <script src="assets/js/reader.js"></script>

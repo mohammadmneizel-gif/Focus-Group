@@ -12,12 +12,18 @@
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/forms.css">
 </head>
-<body>
+<body class="bg-index">
 
   <button class="lang-toggle" id="langToggle" type="button">English</button>
 
   <main class="card">
-    <div class="card__eyebrow" data-i18n="eyebrow">مجموعة تركيز خاصة</div>
+    <!-- Golden Group Icon -->
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 20px; display: block;">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+      <circle cx="9" cy="7" r="4"></circle>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+    </svg>
     <h1 class="card__title" data-i18n="title">مرحباً بك</h1>
     <p class="card__subtitle" data-i18n="subtitle">يرجى إدخال بياناتك للمتابعة</p>
 
@@ -37,7 +43,14 @@
       <button type="submit" class="btn-primary" data-i18n="submitBtn">متابعة</button>
     </form>
 
-    <p class="card__footnote" data-i18n="footnote">محتوى هذه الصفحة سري ومخصص للمشاركين المدعوين فقط</p>
+    <div class="card__footnote" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <!-- Golden Lock Icon -->
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+      <span data-i18n="footnote">محتوى هذه الصفحة سري ومخصص للمشاركين المدعوين فقط</span>
+    </div>
   </main>
 
   <script src="assets/js/api.js"></script>
