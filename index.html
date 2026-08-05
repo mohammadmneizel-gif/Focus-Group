@@ -1,59 +1,1224 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow">
-  <title>Online Focus Group</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Online Focus Group</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="assets/css/style.css">
-  <link rel="stylesheet" href="assets/css/forms.css">
+<style>
+/* ===========================================================
+   Online Focus Group — Single-file app
+   Sections: Entry -> NDA -> Library -> Reader (scroll) + Feedback
+   =========================================================== */
+
+:root {
+  --color-bg-start: #0b0d12;
+  --color-bg-end: #14171f;
+  --color-surface: rgba(255, 255, 255, 0.045);
+  --color-surface-border: rgba(255, 255, 255, 0.09);
+  --color-accent: #d4af6a;
+  --color-accent-hover: #e3c17f;
+  --color-text: #f5f3ee;
+  --color-text-muted: #9aa0ab;
+  --color-error: #e2685f;
+  --font-ar: 'Tajawal', sans-serif;
+  --font-en: 'Poppins', sans-serif;
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --shadow-soft: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { overflow-x: hidden; }
+html, body { min-height: 100%; }
+body {
+  background-color: #0b0d12;
+  color: var(--color-text);
+  line-height: 1.7;
+}
+html[lang="ar"] body { font-family: var(--font-ar); }
+html[lang="en"] body { font-family: var(--font-en); }
+
+/* ===== Language toggle (always visible, fixed corner) ===== */
+.lang-toggle {
+  position: fixed;
+  top: 20px;
+  inset-inline-end: 20px;
+  z-index: 1000;
+  background: rgba(11, 13, 18, 0.7);
+  border: 1px solid var(--color-surface-border);
+  color: var(--color-text-muted);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  backdrop-filter: blur(6px);
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.lang-toggle:hover { color: var(--color-accent); border-color: var(--color-accent); }
+
+/* ===== View sections ===== */
+.view[hidden] { display: none !important; }
+.view-centered {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+#entrySection { background-image: linear-gradient(rgba(11,13,18,.75), rgba(11,13,18,.9)), url('assets/images/index-bg.png'); }
+#ndaSection   { background-image: linear-gradient(rgba(11,13,18,.8), rgba(11,13,18,.95)), url('assets/images/nda-bg.png'); }
+
+/* ===== Card (entry / nda) ===== */
+.card {
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 56px 48px;
+  width: 100%;
+  max-width: 580px;
+  text-align: center;
+}
+.card--wide { width: 95vw; max-width: 1000px; text-align: start; }
+.card--wide .card__eyebrow, .card--wide .card__title, .card--wide .card__subtitle { text-align: center; }
+.card--wide .card__eyebrow { font-size: 16px; letter-spacing: 0.1em; }
+.card--wide .card__title { font-size: 36px; margin-bottom: 12px; }
+.card--wide .card__subtitle { font-size: 18px; margin-bottom: 36px; }
+
+.card__eyebrow { color: var(--color-accent); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 10px; }
+.card__title { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+.card__subtitle { color: var(--color-text-muted); font-size: 14px; margin-bottom: 32px; }
+.card__footnote { margin-top: 24px; font-size: 12px; color: var(--color-text-muted); opacity: 0.7; }
+
+/* ===== Form fields ===== */
+.field { text-align: start; margin-bottom: 20px; }
+.field label { display: block; font-size: 13px; color: var(--color-text-muted); margin-bottom: 8px; }
+.field input {
+  width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(212, 175, 106, 0.2);
+  border-radius: 16px; padding: 16px 18px; color: var(--color-accent); font-size: 15px;
+  font-family: inherit; outline: none; transition: border-color 0.2s ease, background 0.2s ease;
+}
+.field input:focus { border-color: var(--color-accent); background: rgba(255, 255, 255, 0.06); }
+.field input::placeholder { color: rgba(245, 243, 238, 0.3); }
+.field-error { display: none; color: var(--color-error); font-size: 12.5px; margin-top: 6px; text-align: start; }
+.field.has-error input { border-color: var(--color-error); }
+.field.has-error .field-error { display: block; }
+.field.has-error textarea { border-color: var(--color-error); }
+.field.has-error .pill-btn { border-color: var(--color-error); }
+.field textarea {
+  width: 100%; background: rgba(11, 13, 18, 0.8); border: 1px solid rgba(212, 175, 106, 0.35);
+  border-radius: 12px; padding: 16px 20px; color: var(--color-accent); font-size: 16px;
+  font-family: inherit; outline: none; resize: vertical; box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+}
+.field textarea:focus { border-color: var(--color-accent); background: rgba(0, 0, 0, 0.6); box-shadow: 0 0 10px rgba(212, 175, 106, 0.15); }
+
+.btn-primary {
+  width: 100%; background: linear-gradient(135deg, #e3c17f 0%, #d4af6a 100%); color: #000;
+  border: none; border-radius: 16px; padding: 16px 20px; font-size: 16px; font-weight: 700;
+  font-family: inherit; cursor: pointer; margin-top: 16px; box-shadow: 0 4px 15px rgba(212, 175, 106, 0.15);
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+.btn-primary:hover { background: var(--color-accent-hover); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { background: rgba(212, 175, 106, 0.25); color: rgba(20, 23, 31, 0.5); cursor: not-allowed; }
+.btn-primary:disabled:hover { background: rgba(212, 175, 106, 0.25); }
+
+/* ===== NDA ===== */
+.nda-box {
+  background: rgba(11, 13, 18, 0.6); border: 1px solid rgba(212, 175, 106, 0.3); border-radius: 12px;
+  padding: 24px 28px; min-height: 250px; max-height: 40vh; overflow-y: auto; margin-bottom: 26px;
+  font-size: 16.5px; color: var(--color-text); line-height: 1.8; box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+.nda-box p { margin-bottom: 14px; }
+.nda-box p:last-child { margin-bottom: 0; }
+.checkbox-row { display: flex; align-items: center; gap: 12px; cursor: pointer; margin-bottom: 30px; font-size: 16px; font-weight: 500; color: var(--color-text); user-select: none; }
+.checkbox-row input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--color-accent); cursor: pointer; flex-shrink: 0; }
+
+/* ===== Library ===== */
+#librarySection { min-height: 100vh; padding: 40px 24px; background: linear-gradient(rgba(11,13,18,.7), rgba(11,13,18,.9)), url('assets/images/library-bg.png'); background-size: cover; background-position: center; background-attachment: fixed; }
+.library-wrap { max-width: 900px; margin: 0 auto; }
+.library-header { text-align: center; margin-bottom: 40px; }
+.script-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
+.script-card {
+  background: rgba(11, 13, 18, 0.7); border: 1px solid rgba(212, 175, 106, 0.3); border-radius: 16px;
+  padding: 32px 24px; min-height: 120px; display: flex; align-items: center; justify-content: center;
+  text-align: center; cursor: pointer; transition: border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+  position: relative;
+}
+.script-card:hover { border-color: var(--color-accent); transform: translateY(-4px); box-shadow: 0 8px 25px rgba(212, 175, 106, 0.15); }
+.script-card__title { font-size: 16px; font-weight: 600; color: var(--color-accent); }
+.script-card__badge { position: absolute; top: 14px; inset-inline-end: 14px; background: rgba(212, 175, 106, 0.15); color: var(--color-accent); font-size: 11px; padding: 3px 9px; border-radius: 999px; }
+.library-empty { text-align: center; color: var(--color-text-muted); margin-top: 60px; font-size: 14px; }
+
+/* ===== Reader (continuous scroll, flat gray canvas) ===== */
+#readerSection { min-height: 100vh; background: #4a4a4a; padding-bottom: 60px; }
+.reader-topbar {
+  position: sticky; top: 0; z-index: 50; height: 56px; display: flex; align-items: center; justify-content: center;
+  padding: 0 70px; background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(6px); border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.reader-topbar__title { font-size: 16px; color: var(--color-accent); font-weight: 700; letter-spacing: 0.03em; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.reader-progress-track { position: sticky; top: 56px; z-index: 49; height: 4px; background: rgba(255,255,255,0.1); }
+.reader-progress-fill { height: 100%; width: 0%; background: var(--color-accent); transition: width 0.1s linear; }
+
+.zoom-controls { position: fixed; bottom: 24px; inset-inline-end: 24px; display: flex; gap: 10px; z-index: 100; }
+.icon-btn {
+  min-width: 44px; height: 44px; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(212, 175, 106, 0.3);
+  background: rgba(0, 0, 0, 0.7); color: var(--color-accent); font-size: 14px; font-weight: 700; cursor: pointer;
+  backdrop-filter: blur(5px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); transition: all 0.2s ease;
+}
+.icon-btn:hover { background: var(--color-accent); color: #000; transform: scale(1.05); }
+
+.loading-indicator {
+  text-align: center; padding: 80px 20px; color: var(--color-accent); font-size: 16px; font-weight: 600;
+  letter-spacing: 0.05em; animation: pulseGlow 1.2s infinite alternate ease-in-out;
+}
+@keyframes pulseGlow { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+
+/* A dedicated LTR scroll wrapper for zoomed pages: horizontal scrollLeft math is
+   unreliable/inconsistent across browsers when the scrolling element itself is RTL,
+   so this wrapper isolates that and the JS centers it explicitly after every zoom change. */
+.pages-scroll-x { overflow-x: auto; direction: ltr; }
+.pages-container { direction: rtl; max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 30px 20px 10px; }
+
+.page-block {
+  position: relative; width: 100%; margin: 0 auto;
+  background: linear-gradient(to right, #e3d5b8 0%, #f8f4eb 8%, #f8f4eb 92%, #e3d5b8 100%);
+  border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,106,0.35);
+  overflow: hidden; transition: width 0.15s ease;
+}
+.page-block img { display: block; width: 100%; height: auto; pointer-events: none; user-select: none; -webkit-user-drag: none; mix-blend-mode: multiply; }
+.page-number-tag { position: absolute; top: 10px; inset-inline-start: 10px; font-size: 11px; background: rgba(0,0,0,0.55); color: #d4af6a; padding: 3px 9px; border-radius: 999px; }
+
+.page-watermark { position: absolute; inset: 0; display: flex; flex-wrap: wrap; align-content: space-evenly; justify-content: space-evenly; transform: rotate(-32deg) scale(1.3); pointer-events: none; opacity: 0.09; }
+.page-watermark span { font-size: 15px; font-weight: 700; color: #000; white-space: nowrap; margin: 18px 26px; }
+
+/* ===== Feedback (inline, directly under the book) ===== */
+.feedback-inline-wrap { max-width: 900px; margin: 40px auto 0; padding: 0 20px 60px; }
+.feedback-divider { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; color: var(--color-text-muted); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+.feedback-divider::before, .feedback-divider::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.15); }
+.feedback-panel { background: rgba(11,13,18,0.9); border: 1px solid rgba(212,175,106,0.25); border-radius: 20px; padding: 40px; }
+@media (max-width: 600px) { .feedback-panel { padding: 24px 16px; } }
+
+.section-title { font-size: 19px; font-weight: 700; color: var(--color-accent); margin: 36px 0 18px; letter-spacing: 0.02em; }
+.rating-field { background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 20px; text-align: start; transition: border-color 0.3s ease, background 0.3s ease; }
+.rating-field:hover { border-color: rgba(212, 175, 106, 0.4); background: rgba(11, 13, 18, 0.6); }
+.rating-field label { display: block; font-size: 18px; font-weight: 600; color: var(--color-text); margin-bottom: 8px; }
+.rating-hint { font-size: 14px; color: var(--color-text-muted); margin-bottom: 16px; }
+.rating-btn-group { display: flex; gap: 10px; flex-wrap: nowrap; }
+.rating-btn {
+  width: 48px; height: 48px; flex-shrink: 0; border-radius: 10px; border: 1px solid rgba(212, 175, 106, 0.3);
+  background: rgba(0, 0, 0, 0.4); color: var(--color-text-muted); font-size: 17px; font-family: inherit; cursor: pointer; transition: all 0.2s ease;
+}
+.rating-btn:hover { border-color: rgba(212, 175, 106, 0.6); color: var(--color-accent); }
+.rating-btn.selected { background: linear-gradient(135deg, #e3c17f 0%, #d4af6a 100%); border-color: #d4af6a; color: #000; font-weight: 700; box-shadow: 0 4px 15px rgba(212, 175, 106, 0.15); }
+.rating-field.has-error { border-color: var(--color-error); }
+.rating-field.has-error .rating-btn { border-color: rgba(226, 104, 95, 0.4); }
+.slider-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 28px 24px; }
+@media (max-width: 1024px) { .slider-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 768px) { .slider-grid { grid-template-columns: 1fr; gap: 20px; } }
+
+#recommendField { margin-top: 32px; }
+.pill-group { display: flex; gap: 10px; margin-top: 10px; }
+.pill-btn {
+  flex: 1; padding: 12px 10px; border-radius: 12px; border: 1px solid rgba(212, 175, 106, 0.2);
+  background: rgba(0, 0, 0, 0.4); color: var(--color-text-muted); font-size: 13.5px; font-family: inherit; cursor: pointer; transition: all 0.2s ease;
+}
+.pill-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.pill-btn.selected { background: linear-gradient(135deg, #e3c17f 0%, #d4af6a 100%); border-color: var(--color-accent); color: #000; font-weight: 700; box-shadow: 0 4px 15px rgba(212, 175, 106, 0.15); }
+
+.thank-you { text-align: center; padding: 40px 0; }
+.feedback-top-actions { display: flex; gap: 10px; justify-content: flex-start; margin-bottom: 20px; flex-wrap: wrap; }
+.feedback-top-actions button {
+  background: transparent; border: 1px solid var(--color-surface-border); color: var(--color-text-muted);
+  border-radius: var(--radius-md); font-family: inherit; font-size: 13px; padding: 8px 16px; cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.feedback-top-actions button:hover { border-color: var(--color-accent); color: var(--color-accent); }
+
+@media (max-width: 768px) {
+  .card { padding: 40px 32px; max-width: 90%; }
+}
+@media (max-width: 480px) {
+  .view-centered { padding: 12px; }
+  .card { padding: 24px 16px; }
+  .card__title { font-size: 22px; }
+  #librarySection { padding: 24px 16px; }
+}
+
+/* ===== Small phones: reader chrome and rating buttons need to shrink to fit ===== */
+@media (max-width: 480px) {
+  .lang-toggle { padding: 6px 12px; font-size: 11px; top: 12px; }
+  .reader-topbar { padding: 0 54px; height: 50px; }
+  .reader-topbar__title { font-size: 13px; }
+  .reader-progress-track { top: 50px; }
+  .zoom-controls { bottom: 14px; inset-inline-end: 14px; gap: 6px; }
+  .icon-btn { min-width: 38px; height: 38px; font-size: 12px; }
+  .pages-container { padding: 20px 10px 10px; gap: 18px; }
+}
+@media (max-width: 400px) {
+  .rating-field { padding: 14px; }
+  .rating-btn-group { gap: 6px; }
+  .rating-btn { width: 40px; height: 40px; font-size: 15px; }
+}
+
+/* ===== Large screens / TVs: let the reading column and library breathe a bit more ===== */
+@media (min-width: 1600px) {
+  .pages-container, .feedback-inline-wrap, .library-wrap { max-width: 1100px; }
+}
+@media (min-width: 2200px) {
+  .pages-container, .feedback-inline-wrap, .library-wrap { max-width: 1300px; }
+  .card { max-width: 640px; }
+  .card--wide { max-width: 1100px; }
+}
+</style>
 </head>
-<body class="bg-index">
+<body>
 
-  <button class="lang-toggle" id="langToggle" type="button">English</button>
+<button class="lang-toggle" id="langToggle" type="button">English</button>
 
+<!-- ============================= ENTRY ============================= -->
+<section id="entrySection" class="view view-centered">
   <main class="card">
-    <!-- Golden Group Icon -->
     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 20px; display: block;">
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
       <circle cx="9" cy="7" r="4"></circle>
       <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
       <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
     </svg>
-    <h1 class="card__title" data-i18n="title">مرحباً بك</h1>
-    <p class="card__subtitle" data-i18n="subtitle">يرجى إدخال بياناتك للمتابعة</p>
+    <h1 class="card__title" data-i18n="entryTitle">مرحباً بك</h1>
+    <p class="card__subtitle" data-i18n="entrySubtitle">يرجى إدخال بياناتك للمتابعة</p>
 
     <form id="entryForm" novalidate>
       <div class="field" id="nameField">
-        <label for="fullName" data-i18n="nameLabel">الاسم الكامل</label>
-        <input type="text" id="fullName" name="fullName" autocomplete="name" data-i18n-placeholder="namePlaceholder">
-        <div class="field-error" data-i18n="nameError">يرجى إدخال الاسم الكامل</div>
+        <label for="fullName" data-i18n="entryNameLabel">الاسم الكامل</label>
+        <input type="text" id="fullName" name="fullName" autocomplete="name" data-i18n-placeholder="entryNamePlaceholder">
+        <div class="field-error" data-i18n="entryNameError">يرجى إدخال الاسم الكامل</div>
       </div>
-
       <div class="field" id="phoneField">
-        <label for="phoneNumber" data-i18n="phoneLabel">رقم الهاتف</label>
-        <input type="tel" id="phoneNumber" name="phoneNumber" autocomplete="tel" data-i18n-placeholder="phonePlaceholder">
-        <div class="field-error" data-i18n="phoneError">يرجى إدخال رقم هاتف صحيح</div>
+        <label for="phoneNumber" data-i18n="entryPhoneLabel">رقم الهاتف</label>
+        <input type="tel" id="phoneNumber" name="phoneNumber" autocomplete="tel" data-i18n-placeholder="entryPhonePlaceholder">
+        <div class="field-error" data-i18n="entryPhoneError">يرجى إدخال رقم هاتف صحيح</div>
       </div>
-
-      <button type="submit" class="btn-primary" data-i18n="submitBtn">متابعة</button>
+      <button type="submit" class="btn-primary" data-i18n="entrySubmitBtn">متابعة</button>
     </form>
 
     <div class="card__footnote" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-      <!-- Golden Lock Icon -->
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
       </svg>
-      <span data-i18n="footnote">محتوى هذه الصفحة سري ومخصص للمشاركين المدعوين فقط</span>
+      <span data-i18n="entryFootnote">محتوى هذه الصفحة سري ومخصص للمشاركين المدعوين فقط</span>
     </div>
   </main>
+</section>
 
-  <script src="assets/js/api.js"></script>
-  <script src="assets/js/entry.js"></script>
+<!-- ============================= NDA ============================= -->
+<section id="ndaSection" class="view view-centered" hidden>
+  <main class="card card--wide">
+    <div class="card__eyebrow" data-i18n="ndaEyebrow">اتفاقية عدم إفشاء</div>
+    <h1 class="card__title" data-i18n="ndaTitle">قبل المتابعة</h1>
+    <p class="card__subtitle" data-i18n="ndaSubtitle">يرجى قراءة الاتفاقية التالية بعناية قبل المتابعة إلى النص</p>
+
+    <div class="nda-box" id="ndaBox">
+      <p data-i18n="ndaP1">يوافق المشارك (المُشار إليه فيما بعد بـ "المستلم") على الحفاظ على السرية التامة لأي نص أو محتوى إبداعي يتم الاطلاع عليه من خلال هذه المنصة، وذلك بصفته جزءاً من مجموعة تركيز خاصة وغير معلنة.</p>
+      <p data-i18n="ndaP2">يلتزم المستلم بعدم نسخ أو تصوير أو تسجيل أو مشاركة أو إعادة نشر أي جزء من المحتوى بأي شكل من الأشكال، سواء كان ذلك عبر لقطات شاشة، أو تصوير الشاشة بجهاز آخر، أو نسخ النص، أو أي وسيلة أخرى.</p>
+      <p data-i18n="ndaP3">يقر المستلم بأن هذا المحتوى غير منشور بعد، وأن أي إفشاء أو تسريب له قد يُلحق ضرراً بالجهة المالكة، وقد يترتب عليه مسؤولية قانونية.</p>
+      <p data-i18n="ndaP4">تحتفظ الجهة المنظمة بالحق في تتبع أي نسخة من المحتوى تحمل علامة مائية خاصة بالمشارك، وذلك لأغراض حماية الملكية الفكرية.</p>
+      <p data-i18n="ndaP5">بالموافقة أدناه، يقر المستلم بأنه قرأ هذه الاتفاقية وفهمها ويوافق على الالتزام الكامل ببنودها.</p>
+    </div>
+
+    <label class="checkbox-row" for="ndaCheckbox">
+      <input type="checkbox" id="ndaCheckbox">
+      <span data-i18n="ndaCheckboxLabel">لقد قرأت هذه الاتفاقية وأوافق عليها</span>
+    </label>
+
+    <button type="button" class="btn-primary" id="continueBtn" disabled data-i18n="ndaContinueBtn">متابعة إلى النص</button>
+  </main>
+</section>
+
+<!-- ============================= LIBRARY ============================= -->
+<section id="librarySection" class="view" hidden>
+  <div class="library-wrap">
+    <div class="library-header">
+      <div class="card__eyebrow" data-i18n="libEyebrow">مجموعة تركيز خاصة</div>
+      <h1 class="card__title" data-i18n="libTitle">النصوص المتاحة</h1>
+      <p class="card__subtitle" data-i18n="libSubtitle">اختر نصاً لقراءته</p>
+    </div>
+    <div class="script-grid" id="scriptGrid"></div>
+    <p class="library-empty" id="emptyState" data-i18n="libEmptyState" hidden>لا توجد نصوص متاحة حالياً</p>
+  </div>
+</section>
+
+<!-- ============================= READER + FEEDBACK ============================= -->
+<section id="readerSection" class="view" hidden>
+  <header class="reader-topbar">
+    <span class="reader-topbar__title" id="scriptTitle">—</span>
+  </header>
+  <div class="reader-progress-track"><div class="reader-progress-fill" id="progressFill"></div></div>
+
+  <div class="loading-indicator" id="loadingIndicator" data-i18n="readerLoading">جاري تحميل النص...</div>
+
+  <div class="pages-scroll-x" id="pagesScrollX">
+    <div class="pages-container" id="pagesContainer"></div>
+  </div>
+
+  <div class="zoom-controls">
+    <button class="icon-btn" id="zoomOutBtn" type="button">A-</button>
+    <button class="icon-btn" id="zoomInBtn" type="button">A+</button>
+  </div>
+
+  <div class="feedback-inline-wrap" id="feedbackInlineWrap" hidden>
+    <div class="feedback-divider" data-i18n="fbDivider">Feedback</div>
+    <div class="feedback-panel">
+
+      <div class="feedback-top-actions">
+        <button type="button" id="backToLibraryTopBtn" data-i18n="fbBackToLibrary">العودة إلى مكتبة النصوص</button>
+      </div>
+
+      <div class="card__eyebrow" data-i18n="fbEyebrow">استمارة التقييم</div>
+      <h1 class="card__title" data-i18n="fbTitle">رأيك يهمنا</h1>
+      <p class="card__subtitle" data-i18n="fbSubtitle">يرجى تعبئة الاستمارة التالية بصدق</p>
+
+      <form id="feedbackForm" novalidate>
+        <div class="rating-field" id="overallField">
+          <label data-i18n="fbOverall">التقييم العام</label>
+          <p class="rating-hint" data-i18n="fbOverallHint">1 = ضعيف جداً · 5 = ممتاز</p>
+          <div class="rating-btn-group" data-target="overall">
+            <button type="button" class="rating-btn" data-value="5">5</button>
+            <button type="button" class="rating-btn" data-value="4">4</button>
+            <button type="button" class="rating-btn" data-value="3">3</button>
+            <button type="button" class="rating-btn" data-value="2">2</button>
+            <button type="button" class="rating-btn" data-value="1">1</button>
+          </div>
+          <input type="hidden" id="overall" name="overall">
+          <div class="field-error" data-i18n="fbRequiredError">هذا الحقل مطلوب</div>
+        </div>
+
+        <h2 class="section-title" data-i18n="fbSectionRatings">تقييمات تفصيلية</h2>
+
+        <div class="slider-grid">
+          <div class="rating-field" id="storyField">
+            <label data-i18n="fbStory">القصة</label>
+            <p class="rating-hint" data-i18n="fbStoryHint">1 = غير مقنعة · 5 = مقنعة جداً</p>
+            <div class="rating-btn-group" data-target="story">
+              <button type="button" class="rating-btn" data-value="5">5</button><button type="button" class="rating-btn" data-value="4">4</button><button type="button" class="rating-btn" data-value="3">3</button><button type="button" class="rating-btn" data-value="2">2</button><button type="button" class="rating-btn" data-value="1">1</button>
+            </div>
+            <input type="hidden" id="story" name="story">
+            <div class="field-error" data-i18n="fbRequiredError">هذا الحقل مطلوب</div>
+          </div>
+
+          <div class="rating-field" id="charactersField">
+            <label data-i18n="fbCharacters">الشخصيات</label>
+            <p class="rating-hint" data-i18n="fbCharactersHint">1 = غير مقنعة · 5 = قوية جداً</p>
+            <div class="rating-btn-group" data-target="characters">
+              <button type="button" class="rating-btn" data-value="5">5</button><button type="button" class="rating-btn" data-value="4">4</button><button type="button" class="rating-btn" data-value="3">3</button><button type="button" class="rating-btn" data-value="2">2</button><button type="button" class="rating-btn" data-value="1">1</button>
+            </div>
+            <input type="hidden" id="characters" name="characters">
+            <div class="field-error" data-i18n="fbRequiredError">هذا الحقل مطلوب</div>
+          </div>
+
+          <div class="rating-field" id="dialogueField">
+            <label data-i18n="fbDialogue">الحوار</label>
+            <p class="rating-hint" data-i18n="fbDialogueHint">1 = غير طبيعي · 5 = طبيعي جداً</p>
+            <div class="rating-btn-group" data-target="dialogue">
+              <button type="button" class="rating-btn" data-value="5">5</button><button type="button" class="rating-btn" data-value="4">4</button><button type="button" class="rating-btn" data-value="3">3</button><button type="button" class="rating-btn" data-value="2">2</button><button type="button" class="rating-btn" data-value="1">1</button>
+            </div>
+            <input type="hidden" id="dialogue" name="dialogue">
+            <div class="field-error" data-i18n="fbRequiredError">هذا الحقل مطلوب</div>
+          </div>
+
+          <div class="rating-field" id="pacingField">
+            <label data-i18n="fbPacing">الإيقاع</label>
+            <p class="rating-hint" data-i18n="fbPacingHint">1 = غير متوازن · 5 = متوازن جداً</p>
+            <div class="rating-btn-group" data-target="pacing">
+              <button type="button" class="rating-btn" data-value="5">5</button><button type="button" class="rating-btn" data-value="4">4</button><button type="button" class="rating-btn" data-value="3">3</button><button type="button" class="rating-btn" data-value="2">2</button><button type="button" class="rating-btn" data-value="1">1</button>
+            </div>
+            <input type="hidden" id="pacing" name="pacing">
+            <div class="field-error" data-i18n="fbRequiredError">هذا الحقل مطلوب</div>
+          </div>
+
+          <div class="rating-field" id="beginningField">
+            <label data-i18n="fbBeginning">البداية</label>
+            <p class="rating-hint" data-i18n="fbBeginningHint">1 = ضعيفة · 5 = قوية جداً</p>
+            <div class="rating-btn-group" data-target="beginning">
+              <button type="button" class="rating-btn" data-value="5">5</button><button type="button" class="rating-btn" data-value="4">4</button><button type="button" class="rating-btn" data-value="3">3</button><button type="button" class="rating-btn" data-value="2">2</button><button type="button" class="rating-btn" data-value="1">1</button>
+            </div>
+            <input type="hidden" id="beginning" name="beginning">
+            <div class="field-error" data-i18n="fbRequiredError">هذا الحقل مطلوب</div>
+          </div>
+
+          <div class="rating-field" id="middleField">
+            <label data-i18n="fbMiddle">المنتصف</label>
+            <p class="rating-hint" data-i18n="fbMiddleHint">1 = ضعيف · 5 = قوي جداً</p>
+            <div class="rating-btn-group" data-target="middle">
+              <button type="button" class="rating-btn" data-value="5">5</button><button type="button" class="rating-btn" data-value="4">4</button><button type="button" class="rating-btn" data-value="3">3</button><button type="button" class="rating-btn" data-value="2">2</button><button type="button" class="rating-btn" data-value="1">1</button>
+            </div>
+            <input type="hidden" id="middle" name="middle">
+            <div class="field-error" data-i18n="fbRequiredError">هذا الحقل مطلوب</div>
+          </div>
+
+          <div class="rating-field" id="endingField">
+            <label data-i18n="fbEnding">النهاية</label>
+            <p class="rating-hint" data-i18n="fbEndingHint">1 = ضعيفة · 5 = قوية جداً</p>
+            <div class="rating-btn-group" data-target="ending">
+              <button type="button" class="rating-btn" data-value="5">5</button><button type="button" class="rating-btn" data-value="4">4</button><button type="button" class="rating-btn" data-value="3">3</button><button type="button" class="rating-btn" data-value="2">2</button><button type="button" class="rating-btn" data-value="1">1</button>
+            </div>
+            <input type="hidden" id="ending" name="ending">
+            <div class="field-error" data-i18n="fbRequiredError">هذا الحقل مطلوب</div>
+          </div>
+
+          <div class="rating-field" id="emotionalImpactField">
+            <label data-i18n="fbEmotionalImpact">التأثير العاطفي</label>
+            <p class="rating-hint" data-i18n="fbEmotionalImpactHint">1 = منعدم · 5 = قوي جداً</p>
+            <div class="rating-btn-group" data-target="emotionalImpact">
+              <button type="button" class="rating-btn" data-value="5">5</button><button type="button" class="rating-btn" data-value="4">4</button><button type="button" class="rating-btn" data-value="3">3</button><button type="button" class="rating-btn" data-value="2">2</button><button type="button" class="rating-btn" data-value="1">1</button>
+            </div>
+            <input type="hidden" id="emotionalImpact" name="emotionalImpact">
+            <div class="field-error" data-i18n="fbRequiredError">هذا الحقل مطلوب</div>
+          </div>
+
+          <div class="rating-field" id="originalityField">
+            <label data-i18n="fbOriginality">الأصالة</label>
+            <p class="rating-hint" data-i18n="fbOriginalityHint">1 = مكرر · 5 = مبتكر جداً</p>
+            <div class="rating-btn-group" data-target="originality">
+              <button type="button" class="rating-btn" data-value="5">5</button><button type="button" class="rating-btn" data-value="4">4</button><button type="button" class="rating-btn" data-value="3">3</button><button type="button" class="rating-btn" data-value="2">2</button><button type="button" class="rating-btn" data-value="1">1</button>
+            </div>
+            <input type="hidden" id="originality" name="originality">
+            <div class="field-error" data-i18n="fbRequiredError">هذا الحقل مطلوب</div>
+          </div>
+        </div>
+
+        <div class="field" id="recommendField">
+          <label data-i18n="fbRecommend">هل توصي بهذا العمل؟</label>
+          <div class="pill-group" id="recommendGroup">
+            <button type="button" class="pill-btn" data-value="Yes" data-i18n="fbYes">نعم</button>
+            <button type="button" class="pill-btn" data-value="Maybe" data-i18n="fbMaybe">ربما</button>
+            <button type="button" class="pill-btn" data-value="No" data-i18n="fbNo">لا</button>
+          </div>
+          <input type="hidden" id="recommend" name="recommend">
+          <div class="field-error" data-i18n="fbRecommendError">يرجى اختيار إجابة</div>
+        </div>
+
+        <h2 class="section-title" data-i18n="fbSectionOpen">أسئلة مفتوحة</h2>
+
+        <div class="field" id="favoriteMomentField">
+          <label for="favoriteMoment" data-i18n="fbFavoriteMoment">أفضل لحظة في النص</label>
+          <textarea id="favoriteMoment" name="favoriteMoment" rows="2"></textarea>
+          <div class="field-error" data-i18n="fbRequiredError">هذا الحقل مطلوب</div>
+        </div>
+        <div class="field" id="leastFavoriteMomentField">
+          <label for="leastFavoriteMoment" data-i18n="fbLeastFavoriteMoment">أقل لحظة إعجاباً</label>
+          <textarea id="leastFavoriteMoment" name="leastFavoriteMoment" rows="2"></textarea>
+          <div class="field-error" data-i18n="fbRequiredError">هذا الحقل مطلوب</div>
+        </div>
+        <div class="field" id="confusingPartsField">
+          <label for="confusingParts" data-i18n="fbConfusingParts">أجزاء غير واضحة</label>
+          <textarea id="confusingParts" name="confusingParts" rows="2"></textarea>
+          <div class="field-error" data-i18n="fbRequiredError">هذا الحقل مطلوب</div>
+        </div>
+        <div class="field" id="suggestionsField">
+          <label for="suggestions" data-i18n="fbSuggestions">اقتراحات</label>
+          <textarea id="suggestions" name="suggestions" rows="2"></textarea>
+          <div class="field-error" data-i18n="fbRequiredError">هذا الحقل مطلوب</div>
+        </div>
+
+        <div class="field" id="additionalCommentsField">
+          <label for="additionalComments" data-i18n="fbAdditionalCommentsOptional">ملاحظات إضافية (اختياري)</label>
+          <textarea id="additionalComments" name="additionalComments" rows="2"></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary" data-i18n="fbSubmitBtn">إرسال التقييم</button>
+      </form>
+
+      <div class="thank-you" id="thankYou" hidden>
+        <div class="card__title" data-i18n="fbThankYouTitle">شكراً لك</div>
+        <p class="card__subtitle" data-i18n="fbThankYouSubtitle">تم استلام تقييمك بنجاح</p>
+        <button type="button" class="btn-primary" id="backToLibraryBtn" data-i18n="fbBackToLibrary">العودة إلى مكتبة النصوص</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+/* ===========================================================
+   Backend bridge — the only code that talks to the Apps Script
+   =========================================================== */
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzIejIakPvWYsA-ed2Varmc3fvj2EdB9qDIKkoFzl0KXxvD7kZAccFgz66mS1teQpGm/exec";
+
+async function callBackend(action, payload) {
+  const response = await fetch(BACKEND_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action, ...payload })
+  });
+  return response.json();
+}
+function registerParticipant(fullName, phone, language) { return callBackend("registerParticipant", { fullName, phone, language }); }
+function acceptNda(sessionToken) { return callBackend("acceptNda", { sessionToken }); }
+function listScripts(sessionToken) { return callBackend("listScripts", { sessionToken }); }
+function getScriptContent(sessionToken, scriptId) { return callBackend("getScript", { sessionToken, scriptId }); }
+function submitFeedback(record) { return callBackend("submitFeedback", record); }
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+/* ===========================================================
+   Translations
+   =========================================================== */
+const translations = {
+  ar: {
+    toggleLabel: "English",
+    entryTitle: "مرحباً بك", entrySubtitle: "يرجى إدخال بياناتك للمتابعة",
+    entryNameLabel: "الاسم الكامل", entryNamePlaceholder: "مثال: أحمد الخالدي", entryNameError: "يرجى إدخال الاسم الكامل",
+    entryPhoneLabel: "رقم الهاتف", entryPhonePlaceholder: "مثال: 07XXXXXXXX", entryPhoneError: "يرجى إدخال رقم هاتف صحيح",
+    entrySubmitBtn: "متابعة", entryFootnote: "محتوى هذه الصفحة سري ومخصص للمشاركين المدعوين فقط",
+
+    ndaEyebrow: "اتفاقية عدم إفشاء", ndaTitle: "قبل المتابعة",
+    ndaSubtitle: "يرجى قراءة الاتفاقية التالية بعناية قبل المتابعة إلى النص",
+    ndaCheckboxLabel: "لقد قرأت هذه الاتفاقية وأوافق عليها", ndaContinueBtn: "متابعة إلى النص",
+
+    libEyebrow: "مجموعة تركيز خاصة", libTitle: "النصوص المتاحة", libSubtitle: "اختر نصاً لقراءته",
+    libEmptyState: "لا توجد نصوص متاحة حالياً", libReviewed: "تم التقييم",
+
+    readerLoading: "جاري تحميل النص...",
+
+    fbDivider: "التقييم", fbEyebrow: "استمارة التقييم", fbTitle: "رأيك يهمنا", fbSubtitle: "يرجى تعبئة الاستمارة التالية بصدق",
+    fbOverall: "التقييم العام", fbOverallHint: "1 = ضعيف جداً · 5 = ممتاز",
+    fbSectionRatings: "تقييمات تفصيلية",
+    fbStory: "القصة", fbStoryHint: "1 = غير مقنعة · 5 = مقنعة جداً",
+    fbCharacters: "الشخصيات", fbCharactersHint: "1 = غير مقنعة · 5 = قوية جداً",
+    fbDialogue: "الحوار", fbDialogueHint: "1 = غير طبيعي · 5 = طبيعي جداً",
+    fbPacing: "الإيقاع", fbPacingHint: "1 = غير متوازن · 5 = متوازن جداً",
+    fbBeginning: "البداية", fbBeginningHint: "1 = ضعيفة · 5 = قوية جداً",
+    fbMiddle: "المنتصف", fbMiddleHint: "1 = ضعيف · 5 = قوي جداً",
+    fbEnding: "النهاية", fbEndingHint: "1 = ضعيفة · 5 = قوية جداً",
+    fbEmotionalImpact: "التأثير العاطفي", fbEmotionalImpactHint: "1 = منعدم · 5 = قوي جداً",
+    fbOriginality: "الأصالة", fbOriginalityHint: "1 = مكرر · 5 = مبتكر جداً",
+    fbRecommend: "هل توصي بهذا العمل؟", fbYes: "نعم", fbMaybe: "ربما", fbNo: "لا",
+    fbSectionOpen: "أسئلة مفتوحة",
+    fbFavoriteMoment: "أفضل لحظة في النص", fbLeastFavoriteMoment: "أقل لحظة إعجاباً",
+    fbConfusingParts: "أجزاء غير واضحة", fbSuggestions: "اقتراحات",
+    fbAdditionalCommentsOptional: "ملاحظات إضافية (اختياري)",
+    fbSubmitBtn: "إرسال التقييم",
+    fbThankYouTitle: "شكراً لك", fbThankYouSubtitle: "تم استلام تقييمك بنجاح",
+    fbBackToLibrary: "العودة إلى مكتبة النصوص",
+    fbRequiredError: "هذا الحقل مطلوب", fbRecommendError: "يرجى اختيار إجابة"
+  },
+  en: {
+    toggleLabel: "العربية",
+    entryTitle: "Welcome", entrySubtitle: "Please enter your details to continue",
+    entryNameLabel: "Full Name", entryNamePlaceholder: "e.g. Ahmad Khaldi", entryNameError: "Please enter your full name",
+    entryPhoneLabel: "Phone Number", entryPhonePlaceholder: "e.g. 07XXXXXXXX", entryPhoneError: "Please enter a valid phone number",
+    entrySubmitBtn: "Continue", entryFootnote: "This page's content is confidential and for invited participants only",
+
+    ndaEyebrow: "Non-Disclosure Agreement", ndaTitle: "Before You Continue",
+    ndaSubtitle: "Please read the following agreement carefully before continuing to the script",
+    ndaCheckboxLabel: "I have read and agree to the NDA", ndaContinueBtn: "Continue to Script",
+    ndaP1: "The participant (\"the Recipient\") agrees to maintain full confidentiality of any script or creative content accessed through this platform, as part of a private, unannounced focus group.",
+    ndaP2: "The Recipient agrees not to copy, photograph, record, share, or republish any part of the content in any form — including screenshots, photographing the screen with another device, copying text, or any other method.",
+    ndaP3: "The Recipient acknowledges that this content is unpublished, and that any disclosure or leak may cause harm to the owning party and may carry legal liability.",
+    ndaP4: "The organizing party reserves the right to trace any copy of the content bearing a participant-specific watermark, for intellectual property protection purposes.",
+    ndaP5: "By agreeing below, the Recipient confirms they have read and understood this agreement and agree to be fully bound by its terms.",
+
+    libEyebrow: "Private Focus Group", libTitle: "Available Scripts", libSubtitle: "Choose one to read",
+    libEmptyState: "No scripts are available right now", libReviewed: "Reviewed",
+
+    readerLoading: "Loading script...",
+
+    fbDivider: "Feedback", fbEyebrow: "Feedback Form", fbTitle: "We'd Love Your Thoughts", fbSubtitle: "Please fill out the form below honestly",
+    fbOverall: "Overall Rating", fbOverallHint: "1 = Very poor · 5 = Excellent",
+    fbSectionRatings: "Detailed Ratings",
+    fbStory: "Story", fbStoryHint: "1 = Unconvincing · 5 = Very convincing",
+    fbCharacters: "Characters", fbCharactersHint: "1 = Unconvincing · 5 = Very strong",
+    fbDialogue: "Dialogue", fbDialogueHint: "1 = Unnatural · 5 = Very natural",
+    fbPacing: "Pacing", fbPacingHint: "1 = Unbalanced · 5 = Very balanced",
+    fbBeginning: "Beginning", fbBeginningHint: "1 = Weak · 5 = Very strong",
+    fbMiddle: "Middle", fbMiddleHint: "1 = Weak · 5 = Very strong",
+    fbEnding: "Ending", fbEndingHint: "1 = Weak · 5 = Very strong",
+    fbEmotionalImpact: "Emotional Impact", fbEmotionalImpactHint: "1 = None · 5 = Very strong",
+    fbOriginality: "Originality", fbOriginalityHint: "1 = Repetitive · 5 = Very original",
+    fbRecommend: "Would you recommend it?", fbYes: "Yes", fbMaybe: "Maybe", fbNo: "No",
+    fbSectionOpen: "Open Questions",
+    fbFavoriteMoment: "Favorite Moment", fbLeastFavoriteMoment: "Least Favorite Moment",
+    fbConfusingParts: "Confusing Parts", fbSuggestions: "Suggestions",
+    fbAdditionalCommentsOptional: "Additional Comments (Optional)",
+    fbSubmitBtn: "Submit Feedback",
+    fbThankYouTitle: "Thank You", fbThankYouSubtitle: "Your feedback has been received",
+    fbBackToLibrary: "Back to Library",
+    fbRequiredError: "This field is required", fbRecommendError: "Please select an answer"
+  }
+};
+
+let currentLang = sessionStorage.getItem("ofg_lang") || "ar";
+
+function applyLanguage(lang) {
+  currentLang = lang;
+  const html = document.documentElement;
+  html.setAttribute("lang", lang);
+  html.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
+  const dict = translations[lang];
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const key = el.getAttribute("data-i18n");
+    if (dict[key]) el.textContent = dict[key];
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-placeholder");
+    if (dict[key]) el.setAttribute("placeholder", dict[key]);
+  });
+  document.getElementById("langToggle").textContent = dict.toggleLabel;
+  sessionStorage.setItem("ofg_lang", lang);
+  if (scriptsCache.length) renderScripts();
+}
+document.getElementById("langToggle").addEventListener("click", () => {
+  applyLanguage(currentLang === "ar" ? "en" : "ar");
+});
+
+/* ===========================================================
+   Section routing
+   =========================================================== */
+function showView(id) {
+  document.querySelectorAll(".view").forEach((v) => (v.hidden = true));
+  document.getElementById(id).hidden = false;
+  window.scrollTo(0, 0);
+}
+
+function boot() {
+  const fullName = sessionStorage.getItem("ofg_fullName");
+  const phone = sessionStorage.getItem("ofg_phone");
+  const ndaAccepted = sessionStorage.getItem("ofg_ndaAccepted");
+  const scriptId = sessionStorage.getItem("ofg_scriptId");
+
+  if (!fullName || !phone) { showView("entrySection"); return; }
+  if (ndaAccepted !== "Yes") { showView("ndaSection"); return; }
+  if (!scriptId) { enterLibrary(); return; }
+  showView("readerSection");
+  startReading(scriptId, sessionStorage.getItem("ofg_scriptTitle"));
+}
+
+/* ===========================================================
+   Entry
+   =========================================================== */
+function isValidName(value) {
+  const trimmed = value.trim();
+  return trimmed.length >= 3 && trimmed.split(/\s+/).length >= 2;
+}
+function isValidPhone(value) {
+  const cleaned = value.replace(/[\s-]/g, "");
+  return /^(07\d{8}|(?:\+|00)9627\d{8})$/.test(cleaned);
+}
+
+document.getElementById("entryForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const nameInput = document.getElementById("fullName");
+  const phoneInput = document.getElementById("phoneNumber");
+  const nameField = document.getElementById("nameField");
+  const phoneField = document.getElementById("phoneField");
+
+  const nameOk = isValidName(nameInput.value);
+  const phoneOk = isValidPhone(phoneInput.value);
+  nameField.classList.toggle("has-error", !nameOk);
+  phoneField.classList.toggle("has-error", !phoneOk);
+  if (!nameOk || !phoneOk) return;
+
+  const submitBtn = e.target.querySelector(".btn-primary");
+  submitBtn.disabled = true;
+  const name = nameInput.value.trim();
+  const phone = phoneInput.value.trim();
+
+  try {
+    const result = await registerParticipant(name, phone, currentLang);
+    if (!result.success) {
+      alert("حدث خطأ، يرجى المحاولة مرة أخرى. / Something went wrong, please try again.");
+      submitBtn.disabled = false;
+      return;
+    }
+    sessionStorage.setItem("ofg_fullName", name);
+    sessionStorage.setItem("ofg_phone", phone);
+    sessionStorage.setItem("ofg_sessionToken", result.sessionToken);
+    submitBtn.disabled = false;
+    showView("ndaSection");
+  } catch (err) {
+    alert("تعذر الاتصال بالخادم. / Could not connect to the server.");
+    submitBtn.disabled = false;
+  }
+});
+
+/* ===========================================================
+   NDA
+   =========================================================== */
+const ndaCheckbox = document.getElementById("ndaCheckbox");
+const ndaContinueBtn = document.getElementById("continueBtn");
+ndaCheckbox.addEventListener("change", () => { ndaContinueBtn.disabled = !ndaCheckbox.checked; });
+
+ndaContinueBtn.addEventListener("click", async () => {
+  if (!ndaCheckbox.checked) return;
+  const sessionToken = sessionStorage.getItem("ofg_sessionToken");
+  ndaContinueBtn.disabled = true;
+  try {
+    const result = await acceptNda(sessionToken);
+    if (!result.success) {
+      alert("حدث خطأ، يرجى المحاولة مرة أخرى. / Something went wrong, please try again.");
+      ndaContinueBtn.disabled = false;
+      return;
+    }
+    const now = new Date();
+    sessionStorage.setItem("ofg_ndaAccepted", "Yes");
+    sessionStorage.setItem("ofg_ndaDate", now.toISOString().split("T")[0]);
+    sessionStorage.setItem("ofg_ndaTime", now.toTimeString().split(" ")[0]);
+    enterLibrary();
+  } catch (err) {
+    alert("تعذر الاتصال بالخادم. / Could not connect to the server.");
+    ndaContinueBtn.disabled = false;
+  }
+});
+
+/* ===========================================================
+   Library
+   =========================================================== */
+let scriptsCache = [];
+
+function enterLibrary() {
+  showView("librarySection");
+  if (scriptsCache.length) renderScripts();
+  else loadLibrary();
+}
+
+async function loadLibrary() {
+  const sessionToken = sessionStorage.getItem("ofg_sessionToken");
+  const emptyState = document.getElementById("emptyState");
+  emptyState.hidden = true;
+  let result;
+  try {
+    result = await listScripts(sessionToken);
+  } catch (err) {
+    emptyState.textContent = "تعذر الاتصال بالخادم. / Could not connect to the server.";
+    emptyState.hidden = false;
+    return;
+  }
+  if (!result.success) {
+    emptyState.textContent = "خطأ: " + result.error;
+    emptyState.hidden = false;
+    return;
+  }
+  if (!result.scripts.length) {
+    emptyState.hidden = false;
+    return;
+  }
+  scriptsCache = result.scripts;
+  renderScripts();
+}
+
+function renderScripts() {
+  const grid = document.getElementById("scriptGrid");
+  grid.innerHTML = "";
+  const completed = JSON.parse(sessionStorage.getItem("ofg_completedScripts") || "[]");
+  const dict = translations[currentLang];
+
+  scriptsCache.forEach((script) => {
+    const card = document.createElement("div");
+    card.className = "script-card";
+
+    if (completed.includes(script.scriptId)) {
+      const badge = document.createElement("span");
+      badge.className = "script-card__badge";
+      badge.textContent = dict.libReviewed;
+      card.appendChild(badge);
+    }
+    const titleEl = document.createElement("div");
+    titleEl.className = "script-card__title";
+    titleEl.textContent = script.title;
+    card.appendChild(titleEl);
+
+    card.addEventListener("click", () => {
+      sessionStorage.setItem("ofg_scriptId", script.scriptId);
+      sessionStorage.setItem("ofg_scriptTitle", script.title);
+      showView("readerSection");
+      startReading(script.scriptId, script.title);
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+/* ===========================================================
+   Reader (continuous scroll) + inline Feedback
+   =========================================================== */
+let pageImages = [];
+let zoomLevel = 1;
+const ZOOM_MIN = 0.8, ZOOM_MAX = 1.6, ZOOM_STEP = 0.1;
+
+async function startReading(scriptId, title) {
+  document.getElementById("scriptTitle").textContent = title || "—";
+  const pagesContainer = document.getElementById("pagesContainer");
+  const loadingIndicator = document.getElementById("loadingIndicator");
+  const feedbackWrap = document.getElementById("feedbackInlineWrap");
+
+  pagesContainer.innerHTML = "";
+  pageImages = [];
+  zoomLevel = 1;
+  feedbackWrap.hidden = true;
+  loadingIndicator.hidden = false;
+  loadingIndicator.textContent = translations[currentLang].readerLoading;
+  resetFeedbackForm();
+  sessionStorage.setItem("ofg_readingStart", new Date().toISOString());
+
+  const sessionToken = sessionStorage.getItem("ofg_sessionToken");
+  let result;
+  try {
+    result = await getScriptContent(sessionToken, scriptId);
+  } catch (err) {
+    loadingIndicator.textContent = "تعذر الاتصال بالخادم. / Could not connect to the server.";
+    return;
+  }
+  if (!result.success) {
+    loadingIndicator.textContent = "تعذر تحميل النص: " + result.error;
+    return;
+  }
+
+  const binary = atob(result.pdfBase64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+  const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+  const renderScale = 2;
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const viewport = page.getViewport({ scale: renderScale });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext("2d");
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    pageImages.push(canvas.toDataURL("image/png"));
+  }
+
+  loadingIndicator.hidden = true;
+  renderPages();
+  applyZoom();
+  feedbackWrap.hidden = false;
+  updateReaderProgress();
+}
+
+function renderPages() {
+  const container = document.getElementById("pagesContainer");
+  container.innerHTML = "";
+  const fullName = sessionStorage.getItem("ofg_fullName") || "";
+
+  pageImages.forEach((src, index) => {
+    const block = document.createElement("div");
+    block.className = "page-block";
+    block.style.width = zoomLevel * 100 + "%";
+
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = "page " + (index + 1);
+    img.draggable = false;
+    block.appendChild(img);
+
+    const tag = document.createElement("span");
+    tag.className = "page-number-tag";
+    tag.textContent = (index + 1) + " / " + pageImages.length;
+    block.appendChild(tag);
+
+    const watermark = document.createElement("div");
+    watermark.className = "page-watermark";
+    for (let i = 0; i < 12; i++) {
+      const span = document.createElement("span");
+      span.textContent = fullName;
+      watermark.appendChild(span);
+    }
+    block.appendChild(watermark);
+
+    container.appendChild(block);
+  });
+}
+
+function applyZoom() {
+  document.querySelectorAll(".page-block").forEach((b) => (b.style.width = zoomLevel * 100 + "%"));
+  // Center the (possibly wider-than-viewport) zoomed pages instead of leaving the
+  // browser's default scroll position show only one edge of them.
+  const scrollX = document.getElementById("pagesScrollX");
+  scrollX.scrollLeft = (scrollX.scrollWidth - scrollX.clientWidth) / 2;
+}
+document.getElementById("zoomInBtn").addEventListener("click", () => {
+  zoomLevel = Math.min(ZOOM_MAX, +(zoomLevel + ZOOM_STEP).toFixed(2));
+  applyZoom();
+});
+document.getElementById("zoomOutBtn").addEventListener("click", () => {
+  zoomLevel = Math.max(ZOOM_MIN, +(zoomLevel - ZOOM_STEP).toFixed(2));
+  applyZoom();
+});
+
+// Mobile pinch-to-zoom over the pages container
+let initDist = null, initZ = 1;
+const pagesContainerEl = document.getElementById("pagesContainer");
+pagesContainerEl.addEventListener("touchstart", (e) => {
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    initDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    initZ = zoomLevel;
+  }
+}, { passive: false });
+pagesContainerEl.addEventListener("touchmove", (e) => {
+  if (e.touches.length === 2 && initDist) {
+    e.preventDefault();
+    const curDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    zoomLevel = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, +(initZ * (curDist / initDist)).toFixed(2)));
+    applyZoom();
+  }
+}, { passive: false });
+
+// Reading progress bar, based on scroll through the pages container
+function updateReaderProgress() {
+  const readerSection = document.getElementById("readerSection");
+  if (readerSection.hidden) return;
+  const container = document.getElementById("pagesContainer");
+  const rect = container.getBoundingClientRect();
+  const totalHeight = container.offsetHeight;
+  const viewportH = window.innerHeight;
+  const max = Math.max(totalHeight - viewportH, 1);
+  const scrolled = Math.min(Math.max(-rect.top, 0), max);
+  const pct = Math.min(100, Math.max(0, (scrolled / max) * 100));
+  document.getElementById("progressFill").style.width = pct + "%";
+}
+window.addEventListener("scroll", updateReaderProgress, { passive: true });
+
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+/* ===========================================================
+   Feedback (inline under the book)
+   =========================================================== */
+const ratingIds = ["overall", "story", "characters", "dialogue", "pacing", "beginning", "middle", "ending", "emotionalImpact", "originality"];
+const requiredTextFieldIds = ["favoriteMoment", "leastFavoriteMoment", "confusingParts", "suggestions"];
+const textFieldsToSave = ["favoriteMoment", "leastFavoriteMoment", "confusingParts", "suggestions", "additionalComments"];
+const feedbackForm = document.getElementById("feedbackForm");
+const recommendGroup = document.getElementById("recommendGroup");
+const recommendInput = document.getElementById("recommend");
+
+function restoreFeedbackDrafts() {
+  document.querySelectorAll(".rating-btn-group").forEach((group) => {
+    const targetId = group.getAttribute("data-target");
+    const hiddenInput = document.getElementById(targetId);
+    const savedVal = sessionStorage.getItem("ofg_rating_" + targetId);
+    if (savedVal) {
+      hiddenInput.value = savedVal;
+      const activeBtn = group.querySelector(`.rating-btn[data-value="${savedVal}"]`);
+      if (activeBtn) activeBtn.classList.add("selected");
+    }
+  });
+  const savedRec = sessionStorage.getItem("ofg_rating_recommend");
+  if (savedRec) {
+    recommendInput.value = savedRec;
+    const activeRecBtn = recommendGroup.querySelector(`.pill-btn[data-value="${savedRec}"]`);
+    if (activeRecBtn) activeRecBtn.classList.add("selected");
+  }
+  textFieldsToSave.forEach((id) => {
+    const el = document.getElementById(id);
+    const saved = sessionStorage.getItem("ofg_draft_" + id);
+    if (saved) el.value = saved;
+  });
+}
+
+function resetFeedbackForm() {
+  feedbackForm.reset();
+  feedbackForm.hidden = false;
+  document.getElementById("thankYou").hidden = true;
+  document.querySelectorAll(".rating-btn.selected, .pill-btn.selected").forEach((b) => b.classList.remove("selected"));
+  document.querySelectorAll(".has-error").forEach((el) => el.classList.remove("has-error"));
+  ratingIds.forEach((id) => (document.getElementById(id).value = ""));
+  recommendInput.value = "";
+  feedbackForm.querySelector(".btn-primary").disabled = false;
+  restoreFeedbackDrafts();
+}
+
+document.querySelectorAll(".rating-btn-group").forEach((group) => {
+  const targetId = group.getAttribute("data-target");
+  const hiddenInput = document.getElementById(targetId);
+  group.addEventListener("click", (e) => {
+    const btn = e.target.closest(".rating-btn");
+    if (!btn) return;
+    group.querySelectorAll(".rating-btn").forEach((b) => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    const val = btn.getAttribute("data-value");
+    hiddenInput.value = val;
+    sessionStorage.setItem("ofg_rating_" + targetId, val);
+    group.closest(".rating-field").classList.remove("has-error");
+  });
+});
+
+recommendGroup.addEventListener("click", (e) => {
+  const btn = e.target.closest(".pill-btn");
+  if (!btn) return;
+  recommendGroup.querySelectorAll(".pill-btn").forEach((b) => b.classList.remove("selected"));
+  btn.classList.add("selected");
+  const val = btn.getAttribute("data-value");
+  recommendInput.value = val;
+  sessionStorage.setItem("ofg_rating_recommend", val);
+  document.getElementById("recommendField").classList.remove("has-error");
+});
+
+requiredTextFieldIds.forEach((id) => {
+  document.getElementById(id).addEventListener("input", (e) => {
+    if (e.target.value.trim().length > 0) e.target.closest(".field").classList.remove("has-error");
+  });
+});
+
+textFieldsToSave.forEach((id) => {
+  const el = document.getElementById(id);
+  el.addEventListener("input", () => sessionStorage.setItem("ofg_draft_" + id, el.value));
+});
+
+function validateForm() {
+  let isValid = true;
+  ratingIds.forEach((id) => {
+    const hiddenInput = document.getElementById(id);
+    const fieldWrap = hiddenInput.closest(".rating-field");
+    const filled = hiddenInput.value !== "";
+    fieldWrap.classList.toggle("has-error", !filled);
+    if (!filled) isValid = false;
+  });
+  requiredTextFieldIds.forEach((id) => {
+    const input = document.getElementById(id);
+    const fieldWrap = input.closest(".field");
+    const filled = input.value.trim().length > 0;
+    fieldWrap.classList.toggle("has-error", !filled);
+    if (!filled) isValid = false;
+  });
+  const recommendField = document.getElementById("recommendField");
+  const recommendFilled = !!recommendInput.value;
+  recommendField.classList.toggle("has-error", !recommendFilled);
+  if (!recommendFilled) isValid = false;
+
+  if (!isValid) {
+    const firstError = feedbackForm.querySelector(".has-error");
+    if (firstError) firstError.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  return isValid;
+}
+
+function detectDeviceType() {
+  const width = window.innerWidth;
+  const ua = navigator.userAgent;
+  if (/Mobi|Android/i.test(ua) && width < 768) return "Mobile";
+  if (/Tablet|iPad/i.test(ua) || (width >= 768 && width < 1024)) return "Tablet";
+  return "Desktop";
+}
+function detectBrowser() {
+  const ua = navigator.userAgent;
+  if (ua.includes("Edg/")) return "Edge";
+  if (ua.includes("Chrome/") && !ua.includes("Edg/")) return "Chrome";
+  if (ua.includes("Safari/") && !ua.includes("Chrome/")) return "Safari";
+  if (ua.includes("Firefox/")) return "Firefox";
+  return "Other";
+}
+
+document.getElementById("backToLibraryTopBtn").addEventListener("click", () => {
+  document.getElementById("pagesContainer").innerHTML = "";
+  pageImages = [];
+  enterLibrary();
+});
+
+feedbackForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
+
+  const fullName = sessionStorage.getItem("ofg_fullName");
+  const phone = sessionStorage.getItem("ofg_phone");
+  const ndaAccepted = sessionStorage.getItem("ofg_ndaAccepted");
+  const scriptId = sessionStorage.getItem("ofg_scriptId");
+  const readingStart = sessionStorage.getItem("ofg_readingStart");
+  const now = new Date();
+  const readingDurationSeconds = readingStart ? Math.round((now - new Date(readingStart)) / 1000) : null;
+
+  const record = {
+    scriptId: scriptId,
+    scriptTitle: sessionStorage.getItem("ofg_scriptTitle"),
+    fullName: fullName,
+    phone: phone,
+    ndaAccepted: ndaAccepted,
+    ndaDate: sessionStorage.getItem("ofg_ndaDate"),
+    ndaTime: sessionStorage.getItem("ofg_ndaTime"),
+
+    overall: document.getElementById("overall").value,
+    story: document.getElementById("story").value,
+    characters: document.getElementById("characters").value,
+    dialogue: document.getElementById("dialogue").value,
+    pacing: document.getElementById("pacing").value,
+    beginning: document.getElementById("beginning").value,
+    middle: document.getElementById("middle").value,
+    ending: document.getElementById("ending").value,
+    emotionalImpact: document.getElementById("emotionalImpact").value,
+    originality: document.getElementById("originality").value,
+    recommend: recommendInput.value || "Not answered",
+
+    favoriteMoment: document.getElementById("favoriteMoment").value.trim(),
+    leastFavoriteMoment: document.getElementById("leastFavoriteMoment").value.trim(),
+    confusingParts: document.getElementById("confusingParts").value.trim(),
+    suggestions: document.getElementById("suggestions").value.trim(),
+    pageNotes: "",
+    additionalComments: document.getElementById("additionalComments").value.trim(),
+
+    completionTime: now.toISOString(),
+    readingDurationSeconds: readingDurationSeconds,
+    browser: detectBrowser(),
+    deviceType: detectDeviceType()
+  };
+
+  submitRecord(record, scriptId);
+});
+
+async function submitRecord(record, scriptId) {
+  const submitBtn = feedbackForm.querySelector(".btn-primary");
+  submitBtn.disabled = true;
+  record.sessionToken = sessionStorage.getItem("ofg_sessionToken");
+
+  try {
+    const result = await submitFeedback(record);
+    if (!result.success) {
+      alert("حدث خطأ، يرجى المحاولة مرة أخرى. / Something went wrong, please try again.");
+      submitBtn.disabled = false;
+      return;
+    }
+
+    const completed = JSON.parse(sessionStorage.getItem("ofg_completedScripts") || "[]");
+    if (!completed.includes(scriptId)) completed.push(scriptId);
+    sessionStorage.setItem("ofg_completedScripts", JSON.stringify(completed));
+
+    sessionStorage.removeItem("ofg_scriptId");
+    textFieldsToSave.forEach((id) => sessionStorage.removeItem("ofg_draft_" + id));
+    ratingIds.forEach((id) => sessionStorage.removeItem("ofg_rating_" + id));
+    sessionStorage.removeItem("ofg_rating_recommend");
+
+    feedbackForm.hidden = true;
+    document.getElementById("thankYou").hidden = false;
+  } catch (err) {
+    alert("تعذر الاتصال بالخادم. / Could not connect to the server.");
+    submitBtn.disabled = false;
+  }
+}
+
+document.getElementById("backToLibraryBtn").addEventListener("click", () => {
+  document.getElementById("pagesContainer").innerHTML = "";
+  pageImages = [];
+  enterLibrary();
+});
+
+/* ===========================================================
+   Kick off
+   =========================================================== */
+applyLanguage(currentLang);
+boot();
+</script>
 </body>
 </html>
