@@ -25,6 +25,7 @@
   --color-text: #f5f3ee;
   --color-text-muted: #9aa0ab;
   --color-error: #e2685f;
+  --color-done: #5fb98a;
   --font-ar: 'Tajawal', sans-serif;
   --font-en: 'Poppins', sans-serif;
   --radius-lg: 20px;
@@ -156,8 +157,41 @@ html[lang="en"] body { font-family: var(--font-en); }
 }
 .script-card:hover { border-color: var(--color-accent); transform: translateY(-4px); box-shadow: 0 8px 25px rgba(212, 175, 106, 0.15); }
 .script-card__title { font-size: 16px; font-weight: 600; color: var(--color-accent); }
-.script-card__badge { position: absolute; top: 14px; inset-inline-end: 14px; background: rgba(212, 175, 106, 0.15); color: var(--color-accent); font-size: 11px; padding: 3px 9px; border-radius: 999px; }
 .library-empty { text-align: center; color: var(--color-text-muted); margin-top: 60px; font-size: 14px; }
+
+/* ===== Read status dot (shared by folder + script cards) ===== */
+.read-dot {
+  position: absolute; top: 14px; inset-inline-end: 14px; width: 22px; height: 22px; border-radius: 999px;
+  background: rgba(95, 185, 138, 0.16); border: 1px solid rgba(95, 185, 138, 0.55);
+  display: none; align-items: center; justify-content: center;
+}
+.read-dot.show { display: flex; }
+.read-dot svg { width: 12px; height: 12px; }
+
+/* ===== Folder ("collection") cards ===== */
+.folder-card {
+  background: rgba(11, 13, 18, 0.7); border: 1px solid rgba(212, 175, 106, 0.3); border-radius: 16px;
+  padding: 26px 22px; text-align: start; cursor: pointer; position: relative;
+  transition: border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+}
+.folder-card:hover { border-color: var(--color-accent); transform: translateY(-4px); box-shadow: 0 8px 25px rgba(212, 175, 106, 0.15); }
+.folder-icon { color: var(--color-accent); margin-bottom: 12px; display: block; }
+.folder-name { font-size: 17px; font-weight: 700; color: var(--color-text); margin-bottom: 4px; }
+.folder-date { font-family: var(--font-en); font-size: 12.5px; color: var(--color-text-muted); margin-bottom: 16px; direction: ltr; text-align: right; }
+.folder-progress-track { height: 4px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; margin-bottom: 8px; }
+.folder-progress-fill { height: 100%; background: var(--color-done); border-radius: 999px; }
+.folder-progress-fill.empty { background: rgba(212, 175, 106, 0.3); }
+.folder-count { font-size: 12.5px; color: var(--color-text-muted); }
+.folder-count strong { color: var(--color-text); font-weight: 600; }
+
+/* ===== Breadcrumb back to collections ===== */
+.library-crumb { margin-bottom: 24px; }
+.library-crumb button {
+  background: transparent; border: 1px solid var(--color-surface-border); color: var(--color-text-muted);
+  border-radius: var(--radius-md); font-family: inherit; font-size: 13px; padding: 8px 16px; cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.library-crumb button:hover { border-color: var(--color-accent); color: var(--color-accent); }
 
 /* ===== Reader (continuous scroll, flat gray canvas) ===== */
 #readerSection { min-height: 100vh; background: #4a4a4a; padding-bottom: 60px; }
@@ -351,10 +385,14 @@ html[lang="en"] body { font-family: var(--font-en); }
   <div class="library-wrap">
     <div class="library-header">
       <div class="card__eyebrow" data-i18n="libEyebrow">مجموعة تركيز خاصة</div>
-      <h1 class="card__title" data-i18n="libTitle">النصوص المتاحة</h1>
-      <p class="card__subtitle" data-i18n="libSubtitle">اختر نصاً لقراءته</p>
+      <h1 class="card__title" id="libraryTitle">النصوص المتاحة</h1>
+      <p class="card__subtitle" id="librarySubtitle">اختر نصاً لقراءته</p>
     </div>
-    <div class="script-grid" id="scriptGrid"></div>
+    <div class="library-crumb" id="libraryCrumb" hidden>
+      <button type="button" id="libraryBackBtn" data-i18n="libBackToFolders">‹ العودة إلى المجموعات</button>
+    </div>
+    <div class="script-grid" id="foldersGrid"></div>
+    <div class="script-grid" id="scriptGrid" hidden></div>
     <p class="library-empty" id="emptyState" data-i18n="libEmptyState" hidden>لا توجد نصوص متاحة حالياً</p>
   </div>
 </section>
@@ -567,7 +605,7 @@ async function callBackend(action, payload) {
 }
 function registerParticipant(fullName, phone, language) { return callBackend("registerParticipant", { fullName, phone, language }); }
 function acceptNda(sessionToken) { return callBackend("acceptNda", { sessionToken }); }
-function listScripts(sessionToken) { return callBackend("listScripts", { sessionToken }); }
+function listFolders(sessionToken) { return callBackend("listFolders", { sessionToken }); }
 function getScriptContent(sessionToken, scriptId) { return callBackend("getScript", { sessionToken, scriptId }); }
 function submitFeedback(record) { return callBackend("submitFeedback", record); }
 
@@ -588,8 +626,11 @@ const translations = {
     ndaSubtitle: "يرجى قراءة الاتفاقية التالية بعناية قبل المتابعة إلى النص",
     ndaCheckboxLabel: "لقد قرأت هذه الاتفاقية وأوافق عليها", ndaContinueBtn: "متابعة إلى النص",
 
-    libEyebrow: "مجموعة تركيز خاصة", libTitle: "النصوص المتاحة", libSubtitle: "اختر نصاً لقراءته",
-    libEmptyState: "لا توجد نصوص متاحة حالياً", libReviewed: "تم التقييم",
+    libEyebrow: "مجموعة تركيز خاصة",
+    libFoldersTitle: "المجموعات المتاحة", libFoldersSubtitle: "اختر مجموعة لعرض نصوصها",
+    libScriptsSubtitle: "اختر نصاً لقراءته", libBackToFolders: "‹ العودة إلى المجموعات",
+    libEmptyState: "لا توجد نصوص متاحة حالياً", libReadAria: "تمت القراءة",
+    libProgressOf: "من", libProgressRead: "مقروءة",
 
     readerLoading: "جاري تحميل النص...",
 
@@ -631,8 +672,11 @@ const translations = {
     ndaP4: "The organizing party reserves the right to trace any copy of the content bearing a participant-specific watermark, for intellectual property protection purposes.",
     ndaP5: "By agreeing below, the Recipient confirms they have read and understood this agreement and agree to be fully bound by its terms.",
 
-    libEyebrow: "Private Focus Group", libTitle: "Available Scripts", libSubtitle: "Choose one to read",
-    libEmptyState: "No scripts are available right now", libReviewed: "Reviewed",
+    libEyebrow: "Private Focus Group",
+    libFoldersTitle: "Available Collections", libFoldersSubtitle: "Choose a collection to see its scripts",
+    libScriptsSubtitle: "Choose one to read", libBackToFolders: "‹ Back to Collections",
+    libEmptyState: "No scripts are available right now", libReadAria: "Read",
+    libProgressOf: "of", libProgressRead: "read",
 
     readerLoading: "Loading script...",
 
@@ -678,7 +722,10 @@ function applyLanguage(lang) {
   });
   document.getElementById("langToggle").textContent = dict.toggleLabel;
   sessionStorage.setItem("ofg_lang", lang);
-  if (scriptsCache.length) renderScripts();
+  if (foldersCache.length) {
+    currentFolder ? renderScripts() : renderFolders();
+    updateLibraryHeader();
+  }
 }
 document.getElementById("langToggle").addEventListener("click", () => {
   applyLanguage(currentLang === "ar" ? "en" : "ar");
@@ -786,21 +833,45 @@ ndaContinueBtn.addEventListener("click", async () => {
 /* ===========================================================
    Library
    =========================================================== */
-let scriptsCache = [];
+let foldersCache = [];
+let currentFolder = null;
+const checkDotSvg = '<svg viewBox="0 0 12 12" fill="none"><path d="M2 6.2L4.8 9 10 3" stroke="#5fb98a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
+// Entry point: shows the library, resuming the collection the
+// participant was last browsing (e.g. right after submitting
+// feedback for one of its scripts) instead of always resetting
+// to the top-level list of collections.
 function enterLibrary() {
   showView("librarySection");
-  if (scriptsCache.length) renderScripts();
-  else loadLibrary();
+  if (foldersCache.length) {
+    resumeFolderOrShowAll();
+  } else {
+    loadFolders();
+  }
 }
 
-async function loadLibrary() {
+function resumeFolderOrShowAll() {
+  const lastFolderId = sessionStorage.getItem("ofg_currentFolderId");
+  const folder = lastFolderId && foldersCache.find((f) => f.folderId === lastFolderId);
+  if (folder) {
+    openFolder(folder);
+  } else {
+    currentFolder = null;
+    document.getElementById("libraryCrumb").hidden = true;
+    document.getElementById("scriptGrid").hidden = true;
+    document.getElementById("foldersGrid").hidden = false;
+    renderFolders();
+    updateLibraryHeader();
+  }
+}
+
+async function loadFolders() {
   const sessionToken = sessionStorage.getItem("ofg_sessionToken");
   const emptyState = document.getElementById("emptyState");
   emptyState.hidden = true;
   let result;
   try {
-    result = await listScripts(sessionToken);
+    result = await listFolders(sessionToken);
   } catch (err) {
     emptyState.textContent = "تعذر الاتصال بالخادم. / Could not connect to the server.";
     emptyState.hidden = false;
@@ -811,12 +882,77 @@ async function loadLibrary() {
     emptyState.hidden = false;
     return;
   }
-  if (!result.scripts.length) {
+  if (!result.folders.length) {
     emptyState.hidden = false;
     return;
   }
-  scriptsCache = result.scripts;
+  foldersCache = result.folders;
+  resumeFolderOrShowAll();
+}
+
+function renderFolders() {
+  const grid = document.getElementById("foldersGrid");
+  grid.innerHTML = "";
+  const completed = JSON.parse(sessionStorage.getItem("ofg_completedScripts") || "[]");
+  const dict = translations[currentLang];
+
+  foldersCache.forEach((folder) => {
+    const readCount = folder.scripts.filter((s) => completed.includes(s.scriptId)).length;
+    const total = folder.scripts.length;
+    const pct = total ? Math.round((readCount / total) * 100) : 0;
+
+    const card = document.createElement("div");
+    card.className = "folder-card";
+    card.innerHTML = `
+      <svg class="folder-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"></path>
+      </svg>
+      <div class="folder-name"></div>
+      <div class="folder-date"></div>
+      <div class="folder-progress-track"><div class="folder-progress-fill ${readCount === 0 ? "empty" : ""}" style="width:${pct}%"></div></div>
+      <div class="folder-count"><strong>${readCount}</strong> ${dict.libProgressOf} ${total} ${dict.libProgressRead}</div>
+    `;
+    card.querySelector(".folder-name").textContent = folder.name;
+    card.querySelector(".folder-date").textContent = folder.date;
+
+    card.addEventListener("click", () => openFolder(folder));
+    grid.appendChild(card);
+  });
+}
+
+function openFolder(folder) {
+  currentFolder = folder;
+  sessionStorage.setItem("ofg_currentFolderId", folder.folderId);
+
+  document.getElementById("libraryCrumb").hidden = false;
+  document.getElementById("foldersGrid").hidden = true;
+  document.getElementById("scriptGrid").hidden = false;
+
+  updateLibraryHeader();
   renderScripts();
+}
+
+document.getElementById("libraryBackBtn").addEventListener("click", () => {
+  currentFolder = null;
+  sessionStorage.removeItem("ofg_currentFolderId");
+  document.getElementById("libraryCrumb").hidden = true;
+  document.getElementById("scriptGrid").hidden = true;
+  document.getElementById("foldersGrid").hidden = false;
+  updateLibraryHeader();
+  renderFolders();
+});
+
+function updateLibraryHeader() {
+  const dict = translations[currentLang];
+  const titleEl = document.getElementById("libraryTitle");
+  const subtitleEl = document.getElementById("librarySubtitle");
+  if (currentFolder) {
+    titleEl.textContent = currentFolder.name;
+    subtitleEl.textContent = dict.libScriptsSubtitle;
+  } else {
+    titleEl.textContent = dict.libFoldersTitle;
+    subtitleEl.textContent = dict.libFoldersSubtitle;
+  }
 }
 
 function renderScripts() {
@@ -825,20 +961,15 @@ function renderScripts() {
   const completed = JSON.parse(sessionStorage.getItem("ofg_completedScripts") || "[]");
   const dict = translations[currentLang];
 
-  scriptsCache.forEach((script) => {
+  currentFolder.scripts.forEach((script) => {
+    const isDone = completed.includes(script.scriptId);
     const card = document.createElement("div");
     card.className = "script-card";
-
-    if (completed.includes(script.scriptId)) {
-      const badge = document.createElement("span");
-      badge.className = "script-card__badge";
-      badge.textContent = dict.libReviewed;
-      card.appendChild(badge);
-    }
-    const titleEl = document.createElement("div");
-    titleEl.className = "script-card__title";
-    titleEl.textContent = script.title;
-    card.appendChild(titleEl);
+    card.innerHTML = `
+      <span class="read-dot ${isDone ? "show" : ""}" aria-label="${dict.libReadAria}" title="${dict.libReadAria}">${checkDotSvg}</span>
+      <div class="script-card__title"></div>
+    `;
+    card.querySelector(".script-card__title").textContent = script.title;
 
     card.addEventListener("click", () => {
       sessionStorage.setItem("ofg_scriptId", script.scriptId);
