@@ -595,19 +595,33 @@ html[lang="en"] body { font-family: var(--font-en); }
    =========================================================== */
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzIejIakPvWYsA-ed2Varmc3fvj2EdB9qDIKkoFzl0KXxvD7kZAccFgz66mS1teQpGm/exec";
 
-async function callBackend(action, payload) {
-  const response = await fetch(BACKEND_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action, ...payload })
-  });
-  return response.json();
+async function callBackend(action, payload, retrying) {
+  try {
+    const response = await fetch(BACKEND_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action, ...payload })
+    });
+    return await response.json();
+  } catch (err) {
+    if (retrying) throw err;
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    return callBackend(action, payload, true);
+  }
 }
 function registerParticipant(fullName, phone, language) { return callBackend("registerParticipant", { fullName, phone, language }); }
 function acceptNda(sessionToken) { return callBackend("acceptNda", { sessionToken }); }
 function listFolders(sessionToken) { return callBackend("listFolders", { sessionToken }); }
 function getScriptContent(sessionToken, scriptId) { return callBackend("getScript", { sessionToken, scriptId }); }
 function submitFeedback(record) { return callBackend("submitFeedback", record); }
+
+// A script counts as read if the server says so (recorded from a past
+// session) or it was just completed in this session, before the next
+// listFolders refetch catches up.
+function isScriptCompleted(script) {
+  const locallyCompleted = JSON.parse(sessionStorage.getItem("ofg_completedScripts") || "[]");
+  return !!script.completed || locallyCompleted.includes(script.scriptId);
+}
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
@@ -893,11 +907,10 @@ async function loadFolders() {
 function renderFolders() {
   const grid = document.getElementById("foldersGrid");
   grid.innerHTML = "";
-  const completed = JSON.parse(sessionStorage.getItem("ofg_completedScripts") || "[]");
   const dict = translations[currentLang];
 
   foldersCache.forEach((folder) => {
-    const readCount = folder.scripts.filter((s) => completed.includes(s.scriptId)).length;
+    const readCount = folder.scripts.filter(isScriptCompleted).length;
     const total = folder.scripts.length;
     const pct = total ? Math.round((readCount / total) * 100) : 0;
 
@@ -958,11 +971,10 @@ function updateLibraryHeader() {
 function renderScripts() {
   const grid = document.getElementById("scriptGrid");
   grid.innerHTML = "";
-  const completed = JSON.parse(sessionStorage.getItem("ofg_completedScripts") || "[]");
   const dict = translations[currentLang];
 
   currentFolder.scripts.forEach((script) => {
-    const isDone = completed.includes(script.scriptId);
+    const isDone = isScriptCompleted(script);
     const card = document.createElement("div");
     card.className = "script-card";
     card.innerHTML = `
