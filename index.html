@@ -228,7 +228,7 @@ html[lang="en"] body { font-family: var(--font-en); }
   position: relative; width: 100%; margin: 0 auto;
   background: linear-gradient(to right, #e3d5b8 0%, #f8f4eb 8%, #f8f4eb 92%, #e3d5b8 100%);
   border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,106,0.35);
-  overflow: hidden; transition: width 0.15s ease;
+  overflow: hidden;
 }
 .page-block img { display: block; width: 100%; height: auto; pointer-events: none; user-select: none; -webkit-user-drag: none; mix-blend-mode: multiply; }
 .page-number-tag { position: absolute; top: 10px; inset-inline-start: 10px; font-size: 11px; background: rgba(0,0,0,0.55); color: #d4af6a; padding: 3px 9px; border-radius: 999px; }
@@ -754,13 +754,24 @@ function showView(id) {
   window.scrollTo(0, 0);
 }
 
+// Returning participants get their details pre-filled on this device, so they
+// come back with the same phone number the server uses to restore their ticks.
+function prefillRememberedParticipant() {
+  try {
+    const nameInput = document.getElementById("fullName");
+    const phoneInput = document.getElementById("phoneNumber");
+    if (!nameInput.value) nameInput.value = localStorage.getItem("ofg_rememberedName") || "";
+    if (!phoneInput.value) phoneInput.value = localStorage.getItem("ofg_rememberedPhone") || "";
+  } catch (err) {}
+}
+
 function boot() {
   const fullName = sessionStorage.getItem("ofg_fullName");
   const phone = sessionStorage.getItem("ofg_phone");
   const ndaAccepted = sessionStorage.getItem("ofg_ndaAccepted");
   const scriptId = sessionStorage.getItem("ofg_scriptId");
 
-  if (!fullName || !phone) { showView("entrySection"); return; }
+  if (!fullName || !phone) { prefillRememberedParticipant(); showView("entrySection"); return; }
   if (ndaAccepted !== "Yes") { showView("ndaSection"); return; }
   if (!scriptId) { enterLibrary(); return; }
   showView("readerSection");
@@ -807,6 +818,10 @@ document.getElementById("entryForm").addEventListener("submit", async (e) => {
     sessionStorage.setItem("ofg_fullName", name);
     sessionStorage.setItem("ofg_phone", phone);
     sessionStorage.setItem("ofg_sessionToken", result.sessionToken);
+    try {
+      localStorage.setItem("ofg_rememberedName", name);
+      localStorage.setItem("ofg_rememberedPhone", phone);
+    } catch (err) {}
     submitBtn.disabled = false;
     showView("ndaSection");
   } catch (err) {
@@ -999,7 +1014,7 @@ function renderScripts() {
    =========================================================== */
 let pageImages = [];
 let zoomLevel = 1;
-const ZOOM_MIN = 0.8, ZOOM_MAX = 1.6, ZOOM_STEP = 0.1;
+const ZOOM_MIN = 0.8, ZOOM_MAX = 3, ZOOM_STEP = 0.25;
 
 async function startReading(scriptId, title) {
   document.getElementById("scriptTitle").textContent = title || "—";
@@ -1061,7 +1076,6 @@ function renderPages() {
   pageImages.forEach((src, index) => {
     const block = document.createElement("div");
     block.className = "page-block";
-    block.style.width = zoomLevel * 100 + "%";
 
     const img = document.createElement("img");
     img.src = src;
@@ -1087,13 +1101,37 @@ function renderPages() {
   });
 }
 
+// Zoom widens the whole pages column (not each page inside it), so the extra
+// width overflows to one scrollable side instead of off-screen on both sides.
 function applyZoom() {
-  document.querySelectorAll(".page-block").forEach((b) => (b.style.width = zoomLevel * 100 + "%"));
-  // Center the (possibly wider-than-viewport) zoomed pages instead of leaving the
-  // browser's default scroll position show only one edge of them.
   const scrollX = document.getElementById("pagesScrollX");
+  const container = document.getElementById("pagesContainer");
+
+  const top = container.getBoundingClientRect().top;
+  const readRatio = container.offsetHeight ? (-top + window.innerHeight / 2) / container.offsetHeight : 0;
+
+  container.style.maxWidth = "";
+  const cssMax = parseFloat(getComputedStyle(container).maxWidth) || Infinity;
+  const baseWidth = Math.min(cssMax, scrollX.clientWidth);
+  container.style.maxWidth = "none";
+  container.style.width = baseWidth * zoomLevel + "px";
+
   scrollX.scrollLeft = (scrollX.scrollWidth - scrollX.clientWidth) / 2;
+
+  // Keep the line the reader was looking at in the middle of the screen.
+  if (readRatio > 0 && readRatio < 1) {
+    const newTop = container.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo(window.scrollX, newTop + readRatio * container.offsetHeight - window.innerHeight / 2);
+  }
 }
+// Mobile browsers fire resize when the address bar hides on scroll; only a real
+// width change (e.g. rotating the phone) should re-fit the pages.
+let lastViewportWidth = window.innerWidth;
+window.addEventListener("resize", () => {
+  if (window.innerWidth === lastViewportWidth) return;
+  lastViewportWidth = window.innerWidth;
+  if (!document.getElementById("readerSection").hidden) applyZoom();
+});
 document.getElementById("zoomInBtn").addEventListener("click", () => {
   zoomLevel = Math.min(ZOOM_MAX, +(zoomLevel + ZOOM_STEP).toFixed(2));
   applyZoom();
